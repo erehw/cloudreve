@@ -6,6 +6,7 @@ import (
 
 	"github.com/cloudreve/Cloudreve/v4/application/dependency"
 	"github.com/cloudreve/Cloudreve/v4/ent"
+	"github.com/cloudreve/Cloudreve/v4/ent/teammember"
 	"github.com/cloudreve/Cloudreve/v4/ent/user"
 	"github.com/cloudreve/Cloudreve/v4/inventory"
 	"github.com/cloudreve/Cloudreve/v4/inventory/types"
@@ -103,9 +104,9 @@ func (service *SingleUserService) Get(c *gin.Context) (*GetUserResponse, error) 
 	ctx := context.WithValue(c, inventory.LoadUserGroup{}, true)
 	ctx = context.WithValue(ctx, inventory.LoadUserPasskey{}, true)
 
-	user, err := userClient.GetByID(ctx, service.ID)
+	user, err := getUserForAdministration(ctx, userClient, service.ID)
 	if err != nil {
-		return nil, serializer.NewError(serializer.CodeDBError, "Failed to get user", err)
+		return nil, err
 	}
 
 	m := manager.NewFileManager(dep, user)
@@ -127,6 +128,9 @@ func (service *SingleUserService) CalibrateStorage(c *gin.Context) (*GetUserResp
 	userClient := dep.UserClient()
 
 	ctx := context.WithValue(c, inventory.LoadUserGroup{}, true)
+	if _, err := getUserForAdministration(ctx, userClient, service.ID); err != nil {
+		return nil, err
+	}
 	_, err := userClient.CalculateStorage(ctx, service.ID)
 	if err != nil {
 		return nil, serializer.NewError(serializer.CodeDBError, "Failed to calculate storage", err)
@@ -168,9 +172,9 @@ func (s *UpsertUserService) Update(c *gin.Context) (*GetUserResponse, error) {
 	userClient := dep.UserClient()
 
 	ctx := context.WithValue(c, inventory.LoadUserGroup{}, true)
-	existing, err := userClient.GetByID(ctx, s.User.ID)
+	existing, err := getUserForAdministration(ctx, userClient, s.User.ID)
 	if err != nil {
-		return nil, serializer.NewError(serializer.CodeDBError, "Failed to get user", err)
+		return nil, err
 	}
 
 	if s.User.ID == 1 && existing.Edges.Group.Permissions.Enabled(int(types.GroupPermissionIsAdmin)) {
@@ -247,7 +251,23 @@ func (s *BatchUserService) Delete(c *gin.Context) error {
 
 		uc, _, ctx, err := inventory.WithTx(ctx, userClient)
 		if err != nil {
+			_ = inventory.Rollback(tx)
 			ae.Add(strconv.Itoa(id), serializer.NewError(serializer.CodeDBError, "Failed to start transaction", err))
+			continue
+		}
+		if _, err := getUserForAdministration(ctx, uc, id); err != nil {
+			_ = inventory.Rollback(tx)
+			ae.Add(strconv.Itoa(id), err)
+			continue
+		}
+		member, err := uc.GetClient().TeamMember.Query().Where(teammember.UserIDEQ(id)).Exist(ctx)
+		if err != nil || member {
+			_ = inventory.Rollback(tx)
+			if err != nil {
+				ae.Add(strconv.Itoa(id), serializer.NewError(serializer.CodeDBError, "无法检查账号的团队成员关系。", err))
+			} else {
+				ae.Add(strconv.Itoa(id), serializer.NewError(serializer.CodeConflict, "请先移除该账号的团队成员身份，再删除账号。", nil))
+			}
 			continue
 		}
 
@@ -270,4 +290,15 @@ func (s *BatchUserService) Delete(c *gin.Context) error {
 	}
 
 	return ae.Aggregate()
+}
+
+func getUserForAdministration(ctx context.Context, users inventory.UserClient, id int) (*ent.User, error) {
+	u, err := users.GetByID(ctx, id)
+	if err != nil {
+		return nil, serializer.NewError(serializer.CodeDBError, "Failed to get user", err)
+	}
+	if u.TeamStorage {
+		return nil, serializer.NewError(serializer.CodeNotFound, "User not found", nil)
+	}
+	return u, nil
 }

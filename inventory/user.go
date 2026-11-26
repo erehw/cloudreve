@@ -55,6 +55,8 @@ type (
 		Create(ctx context.Context, args *NewUserArgs) (*ent.User, error)
 		// GetByEmail get the user with given email, user status is ignored.
 		GetByEmail(ctx context.Context, email string) (*ent.User, error)
+		// VerifyPasswordLogin 校验登录密码并持久化失败次数及锁定状态。
+		VerifyPasswordLogin(ctx context.Context, email, password string) (*ent.User, error)
 		// GetByID get user by its ID, user status is ignored.
 		GetByID(ctx context.Context, id int) (*ent.User, error)
 		// GetActiveByID get user by its ID, only active user will be returned.
@@ -154,10 +156,11 @@ type (
 )
 
 func (c *userClient) CountByTimeRange(ctx context.Context, start, end *time.Time) (int, error) {
+	query := c.client.User.Query().Where(user.TeamStorageEQ(false))
 	if start == nil || end == nil {
-		return c.client.User.Query().Count(ctx)
+		return query.Count(ctx)
 	}
-	return c.client.User.Query().Where(user.CreatedAtGTE(*start), user.CreatedAtLT(*end)).Count(ctx)
+	return query.Where(user.CreatedAtGTE(*start), user.CreatedAtLT(*end)).Count(ctx)
 }
 
 func (c *userClient) UpdateNickname(ctx context.Context, u *ent.User, name string) (*ent.User, error) {
@@ -388,14 +391,20 @@ func (c *userClient) Activate(ctx context.Context, u *ent.User) (*ent.User, erro
 }
 
 func (c *userClient) Create(ctx context.Context, args *NewUserArgs) (*ent.User, error) {
-	// Try to check if there's user with same email.
-	if existedUser, err := c.GetByEmail(ctx, args.Email); err == nil {
+	existedUser, err := c.GetByEmail(ctx, args.Email)
+	if err == nil {
 		if existedUser.Status == user.StatusInactive {
 			return existedUser, ErrInactiveUserExisted
 		}
 		return existedUser, ErrUserEmailExisted
 	}
+	if !ent.IsNotFound(err) {
+		return nil, err
+	}
+	return c.createUser(ctx, args)
+}
 
+func (c *userClient) createUser(ctx context.Context, args *NewUserArgs) (*ent.User, error) {
 	nick := args.Nick
 	if nick == "" {
 		nick = strings.Split(args.Email, "@")[0]
@@ -429,17 +438,11 @@ func (c *userClient) Create(ctx context.Context, args *NewUserArgs) (*ent.User, 
 		return nil, fmt.Errorf("failed to create user: %w", err)
 	}
 
-	if newUser.ID == 1 {
-		// For the first user registered, elevate it to admin group.
-		if _, err := newUser.Update().SetGroupID(1).Save(ctx); err != nil {
-			return newUser, fmt.Errorf("failed to elevate user to admin: %w", err)
-		}
-	}
 	return newUser, nil
 }
 
 func (c *userClient) GetByEmail(ctx context.Context, email string) (*ent.User, error) {
-	return withUserEagerLoading(ctx, c.client.User.Query().Where(user.EmailEqualFold(email))).First(ctx)
+	return withUserEagerLoading(ctx, c.client.User.Query().Where(user.EmailEqualFold(email), user.TeamStorageEQ(false))).First(ctx)
 }
 
 func (c *userClient) GetByID(ctx context.Context, id int) (*ent.User, error) {
@@ -451,7 +454,7 @@ func (c *userClient) GetActiveByID(ctx context.Context, id int) (*ent.User, erro
 		ctx,
 		c.client.User.Query().
 			Where(user.ID(id)).
-			Where(user.StatusEQ(user.StatusActive)),
+			Where(user.StatusEQ(user.StatusActive), user.TeamStorageEQ(false)),
 	).First(ctx)
 }
 
@@ -461,7 +464,7 @@ func (c *userClient) GetActiveByDavAccount(ctx context.Context, email, pwd strin
 		ctx,
 		c.client.User.Query().
 			Where(user.EmailEqualFold(email)).
-			Where(user.StatusEQ(user.StatusActive)).
+			Where(user.StatusEQ(user.StatusActive), user.TeamStorageEQ(false)).
 			WithDavAccounts(func(q *ent.DavAccountQuery) {
 				q.Where(davaccount.Password(pwd))
 			}),
@@ -471,7 +474,10 @@ func (c *userClient) GetActiveByDavAccount(ctx context.Context, email, pwd strin
 func (c *userClient) GetLoginUserByID(ctx context.Context, uid int) (*ent.User, error) {
 	ctx = context.WithValue(ctx, LoadUserGroup{}, true)
 	if uid > 0 {
-		expectedUser, err := c.GetActiveByID(ctx, uid)
+		// 上传回调和存储节点也用此入口加载预先授权的文件所有者。
+		expectedUser, err := withUserEagerLoading(ctx, c.client.User.Query().Where(
+			user.ID(uid), user.StatusEQ(user.StatusActive),
+		)).First(ctx)
 		if err == nil {
 			return expectedUser, nil
 		}
@@ -493,7 +499,7 @@ func (c *userClient) SearchActive(ctx context.Context, limit int, keyword string
 		ctx,
 		c.client.User.Query().
 			Where(user.Or(user.EmailContainsFold(keyword), user.NickContainsFold(keyword))).
-			Where(user.StatusEQ(user.StatusActive)).
+			Where(user.StatusEQ(user.StatusActive), user.TeamStorageEQ(false)).
 			Limit(limit),
 	).All(ctx)
 }
@@ -537,7 +543,7 @@ func (c *userClient) AnonymousUser(ctx context.Context) (*ent.User, error) {
 }
 
 func (c *userClient) ListUsers(ctx context.Context, args *ListUserParameters) (*ListUserResult, error) {
-	query := c.client.User.Query()
+	query := c.client.User.Query().Where(user.TeamStorageEQ(false))
 	if args.GroupID != 0 {
 		query = query.Where(user.GroupUsers(args.GroupID))
 	}
@@ -596,6 +602,7 @@ func (c *userClient) Upsert(ctx context.Context, u *ent.User, password, twoFa st
 	}
 
 	q := c.client.User.UpdateOne(u).
+		Where(user.TeamStorageEQ(false)).
 		SetEmail(u.Email).
 		SetNick(u.Nick).
 		SetAvatar(u.Avatar).

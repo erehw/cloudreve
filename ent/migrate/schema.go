@@ -361,6 +361,23 @@ var (
 			},
 		},
 	}
+	// RegistrationInvitesColumns holds the columns for the "registration_invites" table.
+	RegistrationInvitesColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "created_at", Type: field.TypeTime, SchemaType: map[string]string{"mysql": "datetime"}},
+		{Name: "updated_at", Type: field.TypeTime, SchemaType: map[string]string{"mysql": "datetime"}},
+		{Name: "deleted_at", Type: field.TypeTime, Nullable: true, SchemaType: map[string]string{"mysql": "datetime"}},
+		{Name: "code_digest", Type: field.TypeString, Unique: true, Size: 64},
+		{Name: "limit", Type: field.TypeInt},
+		{Name: "used", Type: field.TypeInt, Default: 0},
+		{Name: "revoked", Type: field.TypeBool, Default: false},
+	}
+	// RegistrationInvitesTable holds the schema information for the "registration_invites" table.
+	RegistrationInvitesTable = &schema.Table{
+		Name:       "registration_invites",
+		Columns:    RegistrationInvitesColumns,
+		PrimaryKey: []*schema.Column{RegistrationInvitesColumns[0]},
+	}
 	// SettingsColumns holds the columns for the "settings" table.
 	SettingsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt, Increment: true},
@@ -471,6 +488,90 @@ var (
 			},
 		},
 	}
+	// TeamsColumns holds the columns for the "teams" table.
+	TeamsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "created_at", Type: field.TypeTime, SchemaType: map[string]string{"mysql": "datetime"}},
+		{Name: "updated_at", Type: field.TypeTime, SchemaType: map[string]string{"mysql": "datetime"}},
+		{Name: "deleted_at", Type: field.TypeTime, Nullable: true, SchemaType: map[string]string{"mysql": "datetime"}},
+		{Name: "name", Type: field.TypeString},
+		{Name: "storage_owner_id", Type: field.TypeInt},
+	}
+	// TeamsTable holds the schema information for the "teams" table.
+	TeamsTable = &schema.Table{
+		Name:       "teams",
+		Columns:    TeamsColumns,
+		PrimaryKey: []*schema.Column{TeamsColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "teams_users_storage_owner",
+				Columns:    []*schema.Column{TeamsColumns[5]},
+				RefColumns: []*schema.Column{UsersColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
+	}
+	// TeamInvitesColumns holds the columns for the "team_invites" table.
+	TeamInvitesColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "token_digest", Type: field.TypeString, Unique: true, Size: 64},
+		{Name: "redeemed_user_ids", Type: field.TypeJSON},
+		{Name: "revoked", Type: field.TypeBool, Default: false},
+		{Name: "team_id", Type: field.TypeInt},
+	}
+	// TeamInvitesTable holds the schema information for the "team_invites" table.
+	TeamInvitesTable = &schema.Table{
+		Name:       "team_invites",
+		Columns:    TeamInvitesColumns,
+		PrimaryKey: []*schema.Column{TeamInvitesColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "team_invites_teams_invites",
+				Columns:    []*schema.Column{TeamInvitesColumns[4]},
+				RefColumns: []*schema.Column{TeamsColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
+	}
+	// TeamMembersColumns holds the columns for the "team_members" table.
+	TeamMembersColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "role", Type: field.TypeEnum, Enums: []string{"admin", "member"}},
+		{Name: "team_id", Type: field.TypeInt},
+		{Name: "user_id", Type: field.TypeInt},
+	}
+	// TeamMembersTable holds the schema information for the "team_members" table.
+	TeamMembersTable = &schema.Table{
+		Name:       "team_members",
+		Columns:    TeamMembersColumns,
+		PrimaryKey: []*schema.Column{TeamMembersColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "team_members_teams_members",
+				Columns:    []*schema.Column{TeamMembersColumns[2]},
+				RefColumns: []*schema.Column{TeamsColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+			{
+				Symbol:     "team_members_users_user",
+				Columns:    []*schema.Column{TeamMembersColumns[3]},
+				RefColumns: []*schema.Column{UsersColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "teammember_team_id_user_id",
+				Unique:  true,
+				Columns: []*schema.Column{TeamMembersColumns[2], TeamMembersColumns[3]},
+			},
+			{
+				Name:    "teammember_user_id",
+				Unique:  false,
+				Columns: []*schema.Column{TeamMembersColumns[3]},
+			},
+		},
+	}
 	// UsersColumns holds the columns for the "users" table.
 	UsersColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt, Increment: true},
@@ -480,6 +581,9 @@ var (
 		{Name: "email", Type: field.TypeString, Unique: true, Size: 100},
 		{Name: "nick", Type: field.TypeString, Size: 100},
 		{Name: "password", Type: field.TypeString, Nullable: true},
+		{Name: "password_login_failures", Type: field.TypeInt, Default: 0},
+		{Name: "password_login_locked_until", Type: field.TypeInt64, Default: 0},
+		{Name: "team_storage", Type: field.TypeBool, Default: false},
 		{Name: "status", Type: field.TypeEnum, Enums: []string{"active", "inactive", "manual_banned", "sys_banned"}, Default: "active"},
 		{Name: "storage", Type: field.TypeInt64, Default: 0},
 		{Name: "two_factor_secret", Type: field.TypeString, Nullable: true},
@@ -495,7 +599,7 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "users_groups_users",
-				Columns:    []*schema.Column{UsersColumns[12]},
+				Columns:    []*schema.Column{UsersColumns[15]},
 				RefColumns: []*schema.Column{GroupsColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
@@ -539,10 +643,14 @@ var (
 		OauthClientsTable,
 		OauthGrantsTable,
 		PasskeysTable,
+		RegistrationInvitesTable,
 		SettingsTable,
 		SharesTable,
 		StoragePoliciesTable,
 		TasksTable,
+		TeamsTable,
+		TeamInvitesTable,
+		TeamMembersTable,
 		UsersTable,
 		FileEntitiesTable,
 	}
@@ -566,6 +674,10 @@ func init() {
 	SharesTable.ForeignKeys[1].RefTable = UsersTable
 	StoragePoliciesTable.ForeignKeys[0].RefTable = NodesTable
 	TasksTable.ForeignKeys[0].RefTable = UsersTable
+	TeamsTable.ForeignKeys[0].RefTable = UsersTable
+	TeamInvitesTable.ForeignKeys[0].RefTable = TeamsTable
+	TeamMembersTable.ForeignKeys[0].RefTable = TeamsTable
+	TeamMembersTable.ForeignKeys[1].RefTable = UsersTable
 	UsersTable.ForeignKeys[0].RefTable = GroupsTable
 	FileEntitiesTable.ForeignKeys[0].RefTable = FilesTable
 	FileEntitiesTable.ForeignKeys[1].RefTable = EntitiesTable

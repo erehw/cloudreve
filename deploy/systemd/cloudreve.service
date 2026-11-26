@@ -1,0 +1,19 @@
+[Unit]
+Description=Cloudreve
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=exec
+User=cloudreve
+Group=cloudreve
+WorkingDirectory=/app/cloudreve
+ExecStart=/app/cloudreve/cloudreve server -c /app/cloudreve/data/conf.ini
+Restart=on-failure
+RestartSec=3s
+UMask=0077
+NoNewPrivileges=true
+ProtectSystem=full
+
+[Install]
+WantedBy=multi-user.target

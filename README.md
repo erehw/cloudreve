@@ -1,4 +1,4 @@
-[中文版本](https://github.com/cloudreve/cloudreve/blob/master/README_zh-CN.md)
+[中文版本](README_zh-CN.md)
 
 <h1 align="center">
   <br>
@@ -34,6 +34,13 @@
   <a href="https://discord.com/invite/WTpMFpZT76">Discord</a>
 </p>
 
+## Nona self-hosted edition
+
+- **Team documents.** Any signed-in user can create a team. Team administrators can invite up to 10 people per link. Members share folders, manage files, and view file versions.
+- **Invite-only registration.** When registration is enabled, new users need a code issued by a site administrator. Each code defaults to 10 registrations.
+- **Administrator setup and sign-in.** The first start with an empty database creates `tom@nona.cn` and saves its random password to `./data/管理员密码.txt`. Ten consecutive password failures lock password sign-in for that account for three minutes.
+- **Pro feature visibility.** The community edition hides Pro-only entries by default. Site administrators can change their visibility under **Settings → Site Information**.
+
 ![Screenshot](https://raw.githubusercontent.com/cloudreve/docs/master/images/homepage.png)
 
 ## :sparkles: Features
@@ -54,11 +61,15 @@
 
 ## :hammer_and_wrench: Deploy
 
+The Linux deployment package uses `cloudreve.service` and listens on port `16003` on a fresh install. Extract the package for your CPU architecture and run `sudo bash install.sh` from the extracted directory. The default installation path is `/app/cloudreve`. See the [systemd and Caddy deployment guide (Chinese)](deploy/systemd/README.md).
+
 To deploy Cloudreve, you can refer to [Getting started](https://docs.cloudreve.org/overview/quickstart) for a quick local deployment to test.
 
 When you're ready to deploy Cloudreve to a production environment, you can refer to [Deploy](https://docs.cloudreve.org/overview/deploy/) for a complete deployment.
 
 ## :gear: Build
+
+On Windows, install Git, Go 1.26 or later, and Node.js with npm. Run `.\build.cmd` from the repository root to produce the Windows x64 EXE and Linux x64 systemd archive under `release/`. The script builds and embeds the frontend in both binaries. Git ignores `release/`.
 
 Please refer to [Build](https://docs.cloudreve.org/overview/build/) for how to build Cloudreve from source code.
 

@@ -39,6 +39,9 @@ type OAuthGrant func(*sql.Selector)
 // Passkey is the predicate function for passkey builders.
 type Passkey func(*sql.Selector)
 
+// RegistrationInvite is the predicate function for registrationinvite builders.
+type RegistrationInvite func(*sql.Selector)
+
 // Setting is the predicate function for setting builders.
 type Setting func(*sql.Selector)
 
@@ -50,6 +53,15 @@ type StoragePolicy func(*sql.Selector)
 
 // Task is the predicate function for task builders.
 type Task func(*sql.Selector)
+
+// Team is the predicate function for team builders.
+type Team func(*sql.Selector)
+
+// TeamInvite is the predicate function for teaminvite builders.
+type TeamInvite func(*sql.Selector)
+
+// TeamMember is the predicate function for teammember builders.
+type TeamMember func(*sql.Selector)
 
 // User is the predicate function for user builders.
 type User func(*sql.Selector)

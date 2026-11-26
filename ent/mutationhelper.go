@@ -70,6 +70,12 @@ func (m *PasskeyMutation) SetRawID(t int) {
 
 // SetUpdatedAt sets the "updated_at" field.
 
+func (m *RegistrationInviteMutation) SetRawID(t int) {
+	m.id = &t
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+
 func (m *SettingMutation) SetRawID(t int) {
 	m.id = &t
 }
@@ -89,6 +95,24 @@ func (m *StoragePolicyMutation) SetRawID(t int) {
 // SetUpdatedAt sets the "updated_at" field.
 
 func (m *TaskMutation) SetRawID(t int) {
+	m.id = &t
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+
+func (m *TeamMutation) SetRawID(t int) {
+	m.id = &t
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+
+func (m *TeamInviteMutation) SetRawID(t int) {
+	m.id = &t
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+
+func (m *TeamMemberMutation) SetRawID(t int) {
 	m.id = &t
 }
 

@@ -24,9 +24,10 @@ type RegisterParameterCtx struct{}
 
 // UserRegisterService 管理用户注册的服务
 type UserRegisterService struct {
-	UserName string `form:"email" json:"email" binding:"required,email"`
-	Password string `form:"password" json:"password" binding:"required,min=6,max=128"`
-	Language string `form:"language" json:"language"`
+	UserName   string `form:"email" json:"email" binding:"required,email"`
+	Password   string `form:"password" json:"password" binding:"required,min=6,max=128"`
+	Language   string `form:"language" json:"language"`
+	InviteCode string `json:"invite_code" binding:"max=128"`
 }
 
 // Register 新用户注册
@@ -35,11 +36,11 @@ func (service *UserRegisterService) Register(c *gin.Context) serializer.Response
 	settings := dep.SettingProvider()
 
 	isEmailRequired := settings.EmailActivationEnabled(c)
+	preferredGroup := settings.DefaultGroup(c)
 	args := &inventory.NewUserArgs{
 		Email:         strings.ToLower(service.UserName),
 		PlainPassword: service.Password,
 		Status:        user.StatusActive,
-		GroupID:       settings.DefaultGroup(c),
 		Language:      service.Language,
 	}
 	if isEmailRequired {
@@ -47,15 +48,27 @@ func (service *UserRegisterService) Register(c *gin.Context) serializer.Response
 	}
 
 	userClient := dep.UserClient()
-	uc, tx, _, err := inventory.WithTx(c, userClient)
+	uc, tx, txCtx, err := inventory.WithTx(c, userClient)
 	if err != nil {
 		return serializer.DBErr(c, "Failed to start transaction", err)
 	}
+	defer inventory.Rollback(tx)
 
-	expectedUser, err := uc.Create(c, args)
+	if err := inventory.ReserveRegistrationInvite(txCtx, uc.GetClient(), service.InviteCode); err != nil {
+		if errors.Is(err, inventory.ErrInvalidRegistrationInvite) {
+			return serializer.ErrWithDetails(c, serializer.CodeInvalidRegistrationInvite, "邀请码无效、已停用或名额已用完。", nil)
+		}
+		return serializer.DBErr(c, "Failed to reserve registration invite", err)
+	}
+	args.GroupID, err = inventory.RegistrationGroup(txCtx, uc.GetClient(), preferredGroup)
+	if err != nil {
+		return serializer.DBErr(c, "Failed to select regular user group for registration", err)
+	}
+
+	expectedUser, err := uc.Create(txCtx, args)
 	isReRegistration := errors.Is(err, inventory.ErrInactiveUserExisted)
 	if isReRegistration {
-		expectedUser, err = uc.UpdateInactivePassword(c, expectedUser, service.Password)
+		expectedUser, err = uc.UpdateInactivePassword(txCtx, expectedUser, service.Password)
 		isEmailRequired = true
 	}
 	if expectedUser != nil {
@@ -63,7 +76,6 @@ func (service *UserRegisterService) Register(c *gin.Context) serializer.Response
 	}
 
 	if err != nil {
-		_ = inventory.Rollback(tx)
 		if errors.Is(err, inventory.ErrUserEmailExisted) {
 			return serializer.ErrWithDetails(c, serializer.CodeEmailExisted, "Email already in use", err)
 		}
@@ -73,6 +85,11 @@ func (service *UserRegisterService) Register(c *gin.Context) serializer.Response
 		}
 
 		return serializer.DBErr(c, "Failed to insert user row", err)
+	}
+	if isReRegistration {
+		if err := inventory.ReleaseRegistrationInvite(txCtx, uc.GetClient(), service.InviteCode); err != nil {
+			return serializer.DBErr(c, "Failed to release registration invite reservation", err)
+		}
 	}
 
 	if err := inventory.Commit(tx); err != nil {

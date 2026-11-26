@@ -24,10 +24,12 @@ import (
 	"github.com/samber/lo"
 )
 
-// needMigration exams if required schema version is satisfied.
+const requiredTeamSchema = "db_team_invite_schema"
+
+// needMigration 同时核对版本和功能表标记，源码构建沿用已有版本号时也会建表。
 func needMigration(client *ent.Client, ctx context.Context, requiredDbVersion string) bool {
-	c, _ := client.Setting.Query().Where(setting.NameEQ(DBVersionPrefix + requiredDbVersion)).Count(ctx)
-	return c == 0
+	c, _ := client.Setting.Query().Where(setting.NameIn(DBVersionPrefix+requiredDbVersion, requiredTeamSchema)).Count(ctx)
+	return c != 2
 }
 
 func migrate(l logging.Logger, client *ent.Client, ctx context.Context, kv cache.Driver, requiredDbVersion string) error {
@@ -55,7 +57,25 @@ func migrate(l logging.Logger, client *ent.Client, ctx context.Context, kv cache
 		return fmt.Errorf("failed applying schema patches: %w", err)
 	}
 
-	client.Setting.Create().SetName(DBVersionPrefix + requiredDbVersion).SetValue("installed").Save(ctx)
+	createdAdmin, err := bootstrapSiteAdministrator(ctx, client, util.DataPath(initialAdminPasswordFile))
+	if err != nil {
+		return fmt.Errorf("无法初始化站点管理员: %w", err)
+	}
+	if createdAdmin {
+		l.Info("已创建站点管理员。临时密码保存在数据目录的 %s。", initialAdminPasswordFile)
+	}
+
+	for _, marker := range []string{DBVersionPrefix + requiredDbVersion, requiredTeamSchema} {
+		installed, err := client.Setting.Query().Where(setting.NameEQ(marker)).Exist(ctx)
+		if err != nil {
+			return err
+		}
+		if !installed {
+			if err := client.Setting.Create().SetName(marker).SetValue("installed").Exec(ctx); err != nil {
+				return err
+			}
+		}
+	}
 	return nil
 }
 

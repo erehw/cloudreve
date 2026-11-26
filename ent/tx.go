@@ -36,6 +36,8 @@ type Tx struct {
 	OAuthGrant *OAuthGrantClient
 	// Passkey is the client for interacting with the Passkey builders.
 	Passkey *PasskeyClient
+	// RegistrationInvite is the client for interacting with the RegistrationInvite builders.
+	RegistrationInvite *RegistrationInviteClient
 	// Setting is the client for interacting with the Setting builders.
 	Setting *SettingClient
 	// Share is the client for interacting with the Share builders.
@@ -44,6 +46,12 @@ type Tx struct {
 	StoragePolicy *StoragePolicyClient
 	// Task is the client for interacting with the Task builders.
 	Task *TaskClient
+	// Team is the client for interacting with the Team builders.
+	Team *TeamClient
+	// TeamInvite is the client for interacting with the TeamInvite builders.
+	TeamInvite *TeamInviteClient
+	// TeamMember is the client for interacting with the TeamMember builders.
+	TeamMember *TeamMemberClient
 	// User is the client for interacting with the User builders.
 	User *UserClient
 
@@ -188,10 +196,14 @@ func (tx *Tx) init() {
 	tx.OAuthClient = NewOAuthClientClient(tx.config)
 	tx.OAuthGrant = NewOAuthGrantClient(tx.config)
 	tx.Passkey = NewPasskeyClient(tx.config)
+	tx.RegistrationInvite = NewRegistrationInviteClient(tx.config)
 	tx.Setting = NewSettingClient(tx.config)
 	tx.Share = NewShareClient(tx.config)
 	tx.StoragePolicy = NewStoragePolicyClient(tx.config)
 	tx.Task = NewTaskClient(tx.config)
+	tx.Team = NewTeamClient(tx.config)
+	tx.TeamInvite = NewTeamInviteClient(tx.config)
+	tx.TeamMember = NewTeamMemberClient(tx.config)
 	tx.User = NewUserClient(tx.config)
 }
 

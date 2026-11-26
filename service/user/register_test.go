@@ -2,6 +2,7 @@ package user
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"html"
 	"net/http"
@@ -10,11 +11,13 @@ import (
 	"testing"
 	"time"
 
+	entsql "entgo.io/ent/dialect/sql"
 	"github.com/cloudreve/Cloudreve/v4/application/dependency"
 	"github.com/cloudreve/Cloudreve/v4/ent"
 	_ "github.com/cloudreve/Cloudreve/v4/ent/runtime"
 	entuser "github.com/cloudreve/Cloudreve/v4/ent/user"
 	"github.com/cloudreve/Cloudreve/v4/inventory"
+	"github.com/cloudreve/Cloudreve/v4/inventory/types"
 	"github.com/cloudreve/Cloudreve/v4/pkg/auth"
 	"github.com/cloudreve/Cloudreve/v4/pkg/boolset"
 	"github.com/cloudreve/Cloudreve/v4/pkg/cluster/routes"
@@ -77,6 +80,7 @@ type registrationFixture struct {
 	users    inventory.UserClient
 	settings *registrationTestSettings
 	mail     *registrationTestEmail
+	invite   inventory.RegistrationInvite
 }
 
 func newRegistrationFixture(t *testing.T) *registrationFixture {
@@ -86,13 +90,17 @@ func newRegistrationFixture(t *testing.T) *registrationFixture {
 	t.Cleanup(func() { gin.SetMode(oldMode) })
 
 	ctx := context.Background()
-	client, err := ent.Open("sqlite3", fmt.Sprintf("file:registration-%d?mode=memory&cache=shared", time.Now().UnixNano()))
+	db, err := sql.Open("sqlite3", fmt.Sprintf("file:registration-%d?mode=memory&cache=shared", time.Now().UnixNano()))
 	require.NoError(t, err)
+	db.SetMaxOpenConns(1)
+	client := ent.NewClient(ent.Driver(entsql.OpenDB("sqlite3", db)))
 	t.Cleanup(func() { require.NoError(t, client.Close()) })
 	require.NoError(t, client.Schema.Create(ctx))
 	group, err := client.Group.Create().SetName("test").SetPermissions(&boolset.BooleanSet{}).Save(ctx)
 	require.NoError(t, err)
 	_, err = client.User.Create().SetEmail("admin@example.com").SetNick("admin").SetGroupID(group.ID).Save(ctx)
+	require.NoError(t, err)
+	invite, err := inventory.CreateRegistrationInvite(ctx, client, inventory.DefaultRegistrationInviteLimit)
 	require.NoError(t, err)
 
 	encoder, err := hashid.New("registration-test")
@@ -108,7 +116,7 @@ func newRegistrationFixture(t *testing.T) *registrationFixture {
 		dependency.WithHashIDEncoder(encoder),
 		dependency.WithGeneralAuth(signer),
 	)
-	return &registrationFixture{dep: dep, users: users, settings: settings, mail: mailer}
+	return &registrationFixture{dep: dep, users: users, settings: settings, mail: mailer, invite: invite}
 }
 
 func (f *registrationFixture) context(method, target string) *gin.Context {
@@ -120,7 +128,11 @@ func (f *registrationFixture) context(method, target string) *gin.Context {
 }
 
 func (f *registrationFixture) register(address, password string) serializer.Response {
-	service := UserRegisterService{UserName: address, Password: password, Language: "en-US"}
+	return f.registerUsing(address, password, f.invite.Code)
+}
+
+func (f *registrationFixture) registerUsing(address, password, code string) serializer.Response {
+	service := UserRegisterService{UserName: address, Password: password, Language: "en-US", InviteCode: code}
 	return service.Register(f.context(http.MethodPost, "/api/v4/user"))
 }
 
@@ -168,6 +180,9 @@ func TestRegisterRenewsPendingCredentials(t *testing.T) {
 	require.Equal(t, serializer.CodeEmailExisted, f.register("victim@example.com", "AttackerPass2").Code)
 	require.Equal(t, active.Password, f.user(t, "victim@example.com").Password)
 	require.Len(t, f.mail.links, 2)
+	invites, err := inventory.ListRegistrationInvites(context.Background(), f.users.GetClient())
+	require.NoError(t, err)
+	require.Equal(t, 1, invites[0].Used)
 }
 
 func TestActivationRejectsSupersededRegistration(t *testing.T) {
@@ -298,4 +313,61 @@ func TestRegistrationWithActivationDisabled(t *testing.T) {
 	require.Equal(t, serializer.CodeInvalidSign, f.activate(t, oldLink).Code)
 	require.Zero(t, f.activate(t, f.mail.links[1]).Code)
 	require.NoError(t, inventory.CheckPassword(f.user(t, "pending@example.com"), "OwnerPass9"))
+}
+
+func TestConcurrentRegistrationUsesAtMostInviteLimit(t *testing.T) {
+	f := newRegistrationFixture(t)
+	f.settings.activation = false
+	require.Equal(t, serializer.CodeInvalidRegistrationInvite, f.registerUsing("missing@example.com", "Password123", "").Code)
+
+	const attempts = 24
+	start := make(chan struct{})
+	responses := make(chan serializer.Response, attempts)
+	for i := range attempts {
+		go func() {
+			<-start
+			responses <- f.register(fmt.Sprintf("user-%d@example.com", i), "Password123")
+		}()
+	}
+	close(start)
+	succeeded := 0
+	for range attempts {
+		response := <-responses
+		if response.Code == 0 {
+			succeeded++
+		} else {
+			require.Equal(t, serializer.CodeInvalidRegistrationInvite, response.Code, response.Msg)
+		}
+	}
+	require.Equal(t, inventory.DefaultRegistrationInviteLimit, succeeded)
+	invites, err := inventory.ListRegistrationInvites(context.Background(), f.users.GetClient())
+	require.NoError(t, err)
+	require.Len(t, invites, 1)
+	require.Equal(t, succeeded, invites[0].Used)
+	require.Empty(t, invites[0].Code)
+}
+
+func TestRegistrationInviteRollsBackAndRejectsAdminGroup(t *testing.T) {
+	f := newRegistrationFixture(t)
+	f.settings.activation = false
+	ctx := context.Background()
+	client := f.users.GetClient()
+	adminPermissions := &boolset.BooleanSet{}
+	boolset.Set(types.GroupPermissionIsAdmin, true, adminPermissions)
+	require.NoError(t, client.Group.UpdateOneID(f.settings.groupID).SetPermissions(adminPermissions).Exec(ctx))
+
+	require.Equal(t, serializer.CodeDBError, f.register("new@example.com", "Password123").Code)
+	invites, err := inventory.ListRegistrationInvites(ctx, client)
+	require.NoError(t, err)
+	require.Zero(t, invites[0].Used)
+
+	group, err := client.Group.Create().SetName("regular").SetPermissions(&boolset.BooleanSet{}).Save(ctx)
+	require.NoError(t, err)
+	require.Equal(t, inventory.DefaultUserGroupID, group.ID)
+	require.Zero(t, f.register("new@example.com", "Password123").Code)
+	require.Equal(t, group.ID, f.user(t, "new@example.com").GroupUsers)
+
+	_, err = inventory.RevokeRegistrationInvite(ctx, client, f.invite.ID)
+	require.NoError(t, err)
+	require.Equal(t, serializer.CodeInvalidRegistrationInvite, f.register("revoked@example.com", "Password123").Code)
 }

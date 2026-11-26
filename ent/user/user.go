@@ -29,6 +29,12 @@ const (
 	FieldNick = "nick"
 	// FieldPassword holds the string denoting the password field in the database.
 	FieldPassword = "password"
+	// FieldPasswordLoginFailures holds the string denoting the password_login_failures field in the database.
+	FieldPasswordLoginFailures = "password_login_failures"
+	// FieldPasswordLoginLockedUntil holds the string denoting the password_login_locked_until field in the database.
+	FieldPasswordLoginLockedUntil = "password_login_locked_until"
+	// FieldTeamStorage holds the string denoting the team_storage field in the database.
+	FieldTeamStorage = "team_storage"
 	// FieldStatus holds the string denoting the status field in the database.
 	FieldStatus = "status"
 	// FieldStorage holds the string denoting the storage field in the database.
@@ -135,6 +141,9 @@ var Columns = []string{
 	FieldEmail,
 	FieldNick,
 	FieldPassword,
+	FieldPasswordLoginFailures,
+	FieldPasswordLoginLockedUntil,
+	FieldTeamStorage,
 	FieldStatus,
 	FieldStorage,
 	FieldTwoFactorSecret,
@@ -171,6 +180,12 @@ var (
 	EmailValidator func(string) error
 	// NickValidator is a validator for the "nick" field. It is called by the builders before save.
 	NickValidator func(string) error
+	// DefaultPasswordLoginFailures holds the default value on creation for the "password_login_failures" field.
+	DefaultPasswordLoginFailures int
+	// DefaultPasswordLoginLockedUntil holds the default value on creation for the "password_login_locked_until" field.
+	DefaultPasswordLoginLockedUntil int64
+	// DefaultTeamStorage holds the default value on creation for the "team_storage" field.
+	DefaultTeamStorage bool
 	// DefaultStorage holds the default value on creation for the "storage" field.
 	DefaultStorage int64
 	// DefaultSettings holds the default value on creation for the "settings" field.
@@ -241,6 +256,21 @@ func ByNick(opts ...sql.OrderTermOption) OrderOption {
 // ByPassword orders the results by the password field.
 func ByPassword(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldPassword, opts...).ToFunc()
+}
+
+// ByPasswordLoginFailures orders the results by the password_login_failures field.
+func ByPasswordLoginFailures(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldPasswordLoginFailures, opts...).ToFunc()
+}
+
+// ByPasswordLoginLockedUntil orders the results by the password_login_locked_until field.
+func ByPasswordLoginLockedUntil(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldPasswordLoginLockedUntil, opts...).ToFunc()
+}
+
+// ByTeamStorage orders the results by the team_storage field.
+func ByTeamStorage(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldTeamStorage, opts...).ToFunc()
 }
 
 // ByStatus orders the results by the status field.

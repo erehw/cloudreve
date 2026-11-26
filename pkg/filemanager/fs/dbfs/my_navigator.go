@@ -3,11 +3,11 @@ package dbfs
 import (
 	"context"
 	"fmt"
-	"github.com/cloudreve/Cloudreve/v4/inventory/types"
 
 	"github.com/cloudreve/Cloudreve/v4/ent"
 	"github.com/cloudreve/Cloudreve/v4/ent/user"
 	"github.com/cloudreve/Cloudreve/v4/inventory"
+	"github.com/cloudreve/Cloudreve/v4/inventory/types"
 	"github.com/cloudreve/Cloudreve/v4/pkg/boolset"
 	"github.com/cloudreve/Cloudreve/v4/pkg/cache"
 	"github.com/cloudreve/Cloudreve/v4/pkg/filemanager/fs"
@@ -17,6 +17,13 @@ import (
 )
 
 var myNavigatorCapability = &boolset.BooleanSet{}
+
+type teamStorageOwnerContextKey struct{}
+
+// WithTeamStorageOwner is scoped to team requests after their membership check.
+func WithTeamStorageOwner(ctx context.Context, ownerID int) context.Context {
+	return context.WithValue(ctx, teamStorageOwnerContextKey{}, ownerID)
+}
 
 // NewMyNavigator creates a navigator for user's "my" file system.
 func NewMyNavigator(u *ent.User, fileClient inventory.FileClient, userClient inventory.UserClient, l logging.Logger,
@@ -92,7 +99,11 @@ func (n *myNavigator) To(ctx context.Context, path *fs.URI) (*File, error) {
 			return nil, fs.ErrPathNotExist.WithError(fmt.Errorf("user not found: %w", err))
 		}
 
-		if targetUser.Status != user.StatusActive && !n.user.Edges.Group.Permissions.Enabled(int(types.GroupPermissionIsAdmin)) {
+		teamStorageOwner, _ := ctx.Value(teamStorageOwnerContextKey{}).(int)
+		if targetUser.TeamStorage && teamStorageOwner != targetUser.ID {
+			return nil, ErrPermissionDenied
+		}
+		if targetUser.Status != user.StatusActive && !targetUser.TeamStorage && !n.user.Edges.Group.Permissions.Enabled(int(types.GroupPermissionIsAdmin)) {
 			return nil, fs.ErrPathNotExist.WithError(fmt.Errorf("inactive user"))
 		}
 

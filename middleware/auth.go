@@ -67,6 +67,11 @@ func CurrentUser() gin.HandlerFunc {
 			c.Abort()
 			return
 		}
+		if u := inventory.UserFromContext(c); u != nil && u.TeamStorage {
+			c.JSON(200, serializer.ErrWithDetails(c, serializer.CodeCredentialInvalid, "Invalid user credentials", nil))
+			c.Abort()
+			return
+		}
 
 		c.Next()
 	}

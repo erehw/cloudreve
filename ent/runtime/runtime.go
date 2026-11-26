@@ -16,11 +16,14 @@ import (
 	"github.com/cloudreve/Cloudreve/v4/ent/oauthclient"
 	"github.com/cloudreve/Cloudreve/v4/ent/oauthgrant"
 	"github.com/cloudreve/Cloudreve/v4/ent/passkey"
+	"github.com/cloudreve/Cloudreve/v4/ent/registrationinvite"
 	"github.com/cloudreve/Cloudreve/v4/ent/schema"
 	"github.com/cloudreve/Cloudreve/v4/ent/setting"
 	"github.com/cloudreve/Cloudreve/v4/ent/share"
 	"github.com/cloudreve/Cloudreve/v4/ent/storagepolicy"
 	"github.com/cloudreve/Cloudreve/v4/ent/task"
+	"github.com/cloudreve/Cloudreve/v4/ent/team"
+	"github.com/cloudreve/Cloudreve/v4/ent/teaminvite"
 	"github.com/cloudreve/Cloudreve/v4/ent/user"
 	"github.com/cloudreve/Cloudreve/v4/inventory/types"
 )
@@ -295,6 +298,43 @@ func init() {
 	passkey.DefaultUpdatedAt = passkeyDescUpdatedAt.Default.(func() time.Time)
 	// passkey.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
 	passkey.UpdateDefaultUpdatedAt = passkeyDescUpdatedAt.UpdateDefault.(func() time.Time)
+	registrationinviteMixin := schema.RegistrationInvite{}.Mixin()
+	registrationinviteMixinHooks0 := registrationinviteMixin[0].Hooks()
+	registrationinvite.Hooks[0] = registrationinviteMixinHooks0[0]
+	registrationinviteMixinInters0 := registrationinviteMixin[0].Interceptors()
+	registrationinvite.Interceptors[0] = registrationinviteMixinInters0[0]
+	registrationinviteMixinFields0 := registrationinviteMixin[0].Fields()
+	_ = registrationinviteMixinFields0
+	registrationinviteFields := schema.RegistrationInvite{}.Fields()
+	_ = registrationinviteFields
+	// registrationinviteDescCreatedAt is the schema descriptor for created_at field.
+	registrationinviteDescCreatedAt := registrationinviteMixinFields0[0].Descriptor()
+	// registrationinvite.DefaultCreatedAt holds the default value on creation for the created_at field.
+	registrationinvite.DefaultCreatedAt = registrationinviteDescCreatedAt.Default.(func() time.Time)
+	// registrationinviteDescUpdatedAt is the schema descriptor for updated_at field.
+	registrationinviteDescUpdatedAt := registrationinviteMixinFields0[1].Descriptor()
+	// registrationinvite.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	registrationinvite.DefaultUpdatedAt = registrationinviteDescUpdatedAt.Default.(func() time.Time)
+	// registrationinvite.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	registrationinvite.UpdateDefaultUpdatedAt = registrationinviteDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// registrationinviteDescCodeDigest is the schema descriptor for code_digest field.
+	registrationinviteDescCodeDigest := registrationinviteFields[0].Descriptor()
+	// registrationinvite.CodeDigestValidator is a validator for the "code_digest" field. It is called by the builders before save.
+	registrationinvite.CodeDigestValidator = registrationinviteDescCodeDigest.Validators[0].(func(string) error)
+	// registrationinviteDescLimit is the schema descriptor for limit field.
+	registrationinviteDescLimit := registrationinviteFields[1].Descriptor()
+	// registrationinvite.LimitValidator is a validator for the "limit" field. It is called by the builders before save.
+	registrationinvite.LimitValidator = registrationinviteDescLimit.Validators[0].(func(int) error)
+	// registrationinviteDescUsed is the schema descriptor for used field.
+	registrationinviteDescUsed := registrationinviteFields[2].Descriptor()
+	// registrationinvite.DefaultUsed holds the default value on creation for the used field.
+	registrationinvite.DefaultUsed = registrationinviteDescUsed.Default.(int)
+	// registrationinvite.UsedValidator is a validator for the "used" field. It is called by the builders before save.
+	registrationinvite.UsedValidator = registrationinviteDescUsed.Validators[0].(func(int) error)
+	// registrationinviteDescRevoked is the schema descriptor for revoked field.
+	registrationinviteDescRevoked := registrationinviteFields[3].Descriptor()
+	// registrationinvite.DefaultRevoked holds the default value on creation for the revoked field.
+	registrationinvite.DefaultRevoked = registrationinviteDescRevoked.Default.(bool)
 	settingMixin := schema.Setting{}.Mixin()
 	settingMixinHooks0 := settingMixin[0].Hooks()
 	setting.Hooks[0] = settingMixinHooks0[0]
@@ -383,6 +423,43 @@ func init() {
 	task.DefaultUpdatedAt = taskDescUpdatedAt.Default.(func() time.Time)
 	// task.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
 	task.UpdateDefaultUpdatedAt = taskDescUpdatedAt.UpdateDefault.(func() time.Time)
+	teamMixin := schema.Team{}.Mixin()
+	teamMixinHooks0 := teamMixin[0].Hooks()
+	team.Hooks[0] = teamMixinHooks0[0]
+	teamMixinInters0 := teamMixin[0].Interceptors()
+	team.Interceptors[0] = teamMixinInters0[0]
+	teamMixinFields0 := teamMixin[0].Fields()
+	_ = teamMixinFields0
+	teamFields := schema.Team{}.Fields()
+	_ = teamFields
+	// teamDescCreatedAt is the schema descriptor for created_at field.
+	teamDescCreatedAt := teamMixinFields0[0].Descriptor()
+	// team.DefaultCreatedAt holds the default value on creation for the created_at field.
+	team.DefaultCreatedAt = teamDescCreatedAt.Default.(func() time.Time)
+	// teamDescUpdatedAt is the schema descriptor for updated_at field.
+	teamDescUpdatedAt := teamMixinFields0[1].Descriptor()
+	// team.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	team.DefaultUpdatedAt = teamDescUpdatedAt.Default.(func() time.Time)
+	// team.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	team.UpdateDefaultUpdatedAt = teamDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// teamDescName is the schema descriptor for name field.
+	teamDescName := teamFields[0].Descriptor()
+	// team.NameValidator is a validator for the "name" field. It is called by the builders before save.
+	team.NameValidator = teamDescName.Validators[0].(func(string) error)
+	teaminviteFields := schema.TeamInvite{}.Fields()
+	_ = teaminviteFields
+	// teaminviteDescTokenDigest is the schema descriptor for token_digest field.
+	teaminviteDescTokenDigest := teaminviteFields[1].Descriptor()
+	// teaminvite.TokenDigestValidator is a validator for the "token_digest" field. It is called by the builders before save.
+	teaminvite.TokenDigestValidator = teaminviteDescTokenDigest.Validators[0].(func(string) error)
+	// teaminviteDescRedeemedUserIds is the schema descriptor for redeemed_user_ids field.
+	teaminviteDescRedeemedUserIds := teaminviteFields[2].Descriptor()
+	// teaminvite.DefaultRedeemedUserIds holds the default value on creation for the redeemed_user_ids field.
+	teaminvite.DefaultRedeemedUserIds = teaminviteDescRedeemedUserIds.Default.([]int)
+	// teaminviteDescRevoked is the schema descriptor for revoked field.
+	teaminviteDescRevoked := teaminviteFields[3].Descriptor()
+	// teaminvite.DefaultRevoked holds the default value on creation for the revoked field.
+	teaminvite.DefaultRevoked = teaminviteDescRevoked.Default.(bool)
 	userMixin := schema.User{}.Mixin()
 	userMixinHooks0 := userMixin[0].Hooks()
 	user.Hooks[0] = userMixinHooks0[0]
@@ -410,12 +487,24 @@ func init() {
 	userDescNick := userFields[1].Descriptor()
 	// user.NickValidator is a validator for the "nick" field. It is called by the builders before save.
 	user.NickValidator = userDescNick.Validators[0].(func(string) error)
+	// userDescPasswordLoginFailures is the schema descriptor for password_login_failures field.
+	userDescPasswordLoginFailures := userFields[3].Descriptor()
+	// user.DefaultPasswordLoginFailures holds the default value on creation for the password_login_failures field.
+	user.DefaultPasswordLoginFailures = userDescPasswordLoginFailures.Default.(int)
+	// userDescPasswordLoginLockedUntil is the schema descriptor for password_login_locked_until field.
+	userDescPasswordLoginLockedUntil := userFields[4].Descriptor()
+	// user.DefaultPasswordLoginLockedUntil holds the default value on creation for the password_login_locked_until field.
+	user.DefaultPasswordLoginLockedUntil = userDescPasswordLoginLockedUntil.Default.(int64)
+	// userDescTeamStorage is the schema descriptor for team_storage field.
+	userDescTeamStorage := userFields[5].Descriptor()
+	// user.DefaultTeamStorage holds the default value on creation for the team_storage field.
+	user.DefaultTeamStorage = userDescTeamStorage.Default.(bool)
 	// userDescStorage is the schema descriptor for storage field.
-	userDescStorage := userFields[4].Descriptor()
+	userDescStorage := userFields[7].Descriptor()
 	// user.DefaultStorage holds the default value on creation for the storage field.
 	user.DefaultStorage = userDescStorage.Default.(int64)
 	// userDescSettings is the schema descriptor for settings field.
-	userDescSettings := userFields[7].Descriptor()
+	userDescSettings := userFields[10].Descriptor()
 	// user.DefaultSettings holds the default value on creation for the settings field.
 	user.DefaultSettings = userDescSettings.Default.(*types.UserSetting)
 }
