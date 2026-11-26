@@ -54,6 +54,20 @@ func (riu *RegistrationInviteUpdate) ClearDeletedAt() *RegistrationInviteUpdate 
 	return riu
 }
 
+// SetCodeDigest sets the "code_digest" field.
+func (riu *RegistrationInviteUpdate) SetCodeDigest(s string) *RegistrationInviteUpdate {
+	riu.mutation.SetCodeDigest(s)
+	return riu
+}
+
+// SetNillableCodeDigest sets the "code_digest" field if the given value is not nil.
+func (riu *RegistrationInviteUpdate) SetNillableCodeDigest(s *string) *RegistrationInviteUpdate {
+	if s != nil {
+		riu.SetCodeDigest(*s)
+	}
+	return riu
+}
+
 // SetUsed sets the "used" field.
 func (riu *RegistrationInviteUpdate) SetUsed(i int) *RegistrationInviteUpdate {
 	riu.mutation.ResetUsed()
@@ -138,6 +152,11 @@ func (riu *RegistrationInviteUpdate) defaults() error {
 
 // check runs all checks and user-defined validators on the builder.
 func (riu *RegistrationInviteUpdate) check() error {
+	if v, ok := riu.mutation.CodeDigest(); ok {
+		if err := registrationinvite.CodeDigestValidator(v); err != nil {
+			return &ValidationError{Name: "code_digest", err: fmt.Errorf(`ent: validator failed for field "RegistrationInvite.code_digest": %w`, err)}
+		}
+	}
 	if v, ok := riu.mutation.Used(); ok {
 		if err := registrationinvite.UsedValidator(v); err != nil {
 			return &ValidationError{Name: "used", err: fmt.Errorf(`ent: validator failed for field "RegistrationInvite.used": %w`, err)}
@@ -166,6 +185,9 @@ func (riu *RegistrationInviteUpdate) sqlSave(ctx context.Context) (n int, err er
 	}
 	if riu.mutation.DeletedAtCleared() {
 		_spec.ClearField(registrationinvite.FieldDeletedAt, field.TypeTime)
+	}
+	if value, ok := riu.mutation.CodeDigest(); ok {
+		_spec.SetField(registrationinvite.FieldCodeDigest, field.TypeString, value)
 	}
 	if value, ok := riu.mutation.Used(); ok {
 		_spec.SetField(registrationinvite.FieldUsed, field.TypeInt, value)
@@ -219,6 +241,20 @@ func (riuo *RegistrationInviteUpdateOne) SetNillableDeletedAt(t *time.Time) *Reg
 // ClearDeletedAt clears the value of the "deleted_at" field.
 func (riuo *RegistrationInviteUpdateOne) ClearDeletedAt() *RegistrationInviteUpdateOne {
 	riuo.mutation.ClearDeletedAt()
+	return riuo
+}
+
+// SetCodeDigest sets the "code_digest" field.
+func (riuo *RegistrationInviteUpdateOne) SetCodeDigest(s string) *RegistrationInviteUpdateOne {
+	riuo.mutation.SetCodeDigest(s)
+	return riuo
+}
+
+// SetNillableCodeDigest sets the "code_digest" field if the given value is not nil.
+func (riuo *RegistrationInviteUpdateOne) SetNillableCodeDigest(s *string) *RegistrationInviteUpdateOne {
+	if s != nil {
+		riuo.SetCodeDigest(*s)
+	}
 	return riuo
 }
 
@@ -319,6 +355,11 @@ func (riuo *RegistrationInviteUpdateOne) defaults() error {
 
 // check runs all checks and user-defined validators on the builder.
 func (riuo *RegistrationInviteUpdateOne) check() error {
+	if v, ok := riuo.mutation.CodeDigest(); ok {
+		if err := registrationinvite.CodeDigestValidator(v); err != nil {
+			return &ValidationError{Name: "code_digest", err: fmt.Errorf(`ent: validator failed for field "RegistrationInvite.code_digest": %w`, err)}
+		}
+	}
 	if v, ok := riuo.mutation.Used(); ok {
 		if err := registrationinvite.UsedValidator(v); err != nil {
 			return &ValidationError{Name: "used", err: fmt.Errorf(`ent: validator failed for field "RegistrationInvite.used": %w`, err)}
@@ -364,6 +405,9 @@ func (riuo *RegistrationInviteUpdateOne) sqlSave(ctx context.Context) (_node *Re
 	}
 	if riuo.mutation.DeletedAtCleared() {
 		_spec.ClearField(registrationinvite.FieldDeletedAt, field.TypeTime)
+	}
+	if value, ok := riuo.mutation.CodeDigest(); ok {
+		_spec.SetField(registrationinvite.FieldCodeDigest, field.TypeString, value)
 	}
 	if value, ok := riuo.mutation.Used(); ok {
 		_spec.SetField(registrationinvite.FieldUsed, field.TypeInt, value)

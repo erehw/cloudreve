@@ -10,7 +10,7 @@ sudo bash install.sh
 
 安装器把程序放到 `/app/cloudreve`，创建 `cloudreve` 系统账号，注册 `cloudreve.service`，并设置开机启动。新安装监听 16003，访问 `http://服务器IP:16003/`。从其他电脑访问时，服务器防火墙需要允许该端口。
 
-配置文件在 `/app/cloudreve/data/conf.ini`。修改 `[System]` 下的 `Listen` 后，运行 `sudo systemctl restart cloudreve`。首次使用空数据库时，以 `tom@nona.cn` 登录，随机密码保存在 `/app/cloudreve/data/管理员密码.txt`。
+配置文件在 `/app/cloudreve/data/conf.ini`。修改 `[System]` 下的 `Listen` 后，运行 `sudo systemctl restart cloudreve`。空数据库首次启动时会生成管理员邮箱和密码。从 `/app/cloudreve/data/管理员密码.txt` 读取这两项并登录。
 
 ```bash
 sudo systemctl status cloudreve

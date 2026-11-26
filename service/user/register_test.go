@@ -100,7 +100,7 @@ func newRegistrationFixture(t *testing.T) *registrationFixture {
 	require.NoError(t, err)
 	_, err = client.User.Create().SetEmail("admin@example.com").SetNick("admin").SetGroupID(group.ID).Save(ctx)
 	require.NoError(t, err)
-	invite, err := inventory.CreateRegistrationInvite(ctx, client, inventory.DefaultRegistrationInviteLimit)
+	invite, err := inventory.CreateRegistrationInvite(ctx, client, inventory.DefaultRegistrationInviteLimit, "")
 	require.NoError(t, err)
 
 	encoder, err := hashid.New("registration-test")

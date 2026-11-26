@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"net/mail"
 	"os"
 	"path/filepath"
 	"strings"
@@ -44,6 +45,7 @@ func TestBootstrapSiteAdministratorResumesAfterFileFailure(t *testing.T) {
 	require.Error(t, err)
 	require.False(t, created)
 	require.Zero(t, client.User.Query().CountX(ctx))
+	require.False(t, client.Setting.Query().Where(setting.NameEQ(initialAdminCreated)).ExistX(ctx))
 
 	require.NoError(t, os.Mkdir(filepath.Dir(passwordPath), 0700))
 	created, err = bootstrapSiteAdministrator(ctx, client, passwordPath)
@@ -51,10 +53,19 @@ func TestBootstrapSiteAdministratorResumesAfterFileFailure(t *testing.T) {
 	require.True(t, created)
 	file, err := os.ReadFile(passwordPath)
 	require.NoError(t, err)
-	password := strings.TrimSpace(string(file))
+	emailLine, passwordLine, ok := strings.Cut(strings.TrimSpace(string(file)), "\n")
+	require.True(t, ok)
+	email, ok := strings.CutPrefix(emailLine, "邮箱：")
+	require.True(t, ok)
+	address, err := mail.ParseAddress(email)
+	require.NoError(t, err)
+	require.Equal(t, email, address.Address)
+	require.Regexp(t, `^admin-[a-z2-7]{26}@cloudreve\.invalid$`, email)
+	password, ok := strings.CutPrefix(passwordLine, "密码：")
+	require.True(t, ok)
 	require.GreaterOrEqual(t, len(password), 20)
 	admin := client.User.Query().OnlyX(ctx)
-	require.Equal(t, initialAdminEmail, admin.Email)
+	require.Equal(t, email, admin.Email)
 	require.Equal(t, user.StatusActive, admin.Status)
 	require.Equal(t, defaultAdminGroupID, admin.GroupUsers)
 	require.NoError(t, CheckPassword(admin, password))
@@ -69,6 +80,47 @@ func TestBootstrapSiteAdministratorResumesAfterFileFailure(t *testing.T) {
 	unchanged, err := os.ReadFile(passwordPath)
 	require.NoError(t, err)
 	require.Equal(t, file, unchanged)
+}
+
+func TestConcurrentBootstrapSiteAdministratorCreatesOneAccount(t *testing.T) {
+	ctx := context.Background()
+	dir := t.TempDir()
+	client := openAccountTestDB(t, filepath.Join(dir, "test.db"))
+	require.NoError(t, client.Schema.Create(ctx))
+	require.NoError(t, client.Group.Create().SetName("Admin").SetPermissions(&boolset.BooleanSet{}).Exec(ctx))
+	passwordPath := filepath.Join(dir, initialAdminPasswordFile)
+
+	type outcome struct {
+		created bool
+		err     error
+	}
+	const attempts = 8
+	start := make(chan struct{})
+	results := make(chan outcome, attempts)
+	for range attempts {
+		go func() {
+			<-start
+			created, err := bootstrapSiteAdministrator(ctx, client, passwordPath)
+			results <- outcome{created: created, err: err}
+		}()
+	}
+	close(start)
+	created := 0
+	for range attempts {
+		result := <-results
+		require.NoError(t, result.err)
+		if result.created {
+			created++
+		}
+	}
+	require.Equal(t, 1, created)
+	admin := client.User.Query().OnlyX(ctx)
+	file, err := os.ReadFile(passwordPath)
+	require.NoError(t, err)
+	_, password, ok := strings.Cut(strings.TrimSpace(string(file)), "\n密码：")
+	require.True(t, ok)
+	require.True(t, strings.HasPrefix(string(file), "邮箱："+admin.Email+"\n"))
+	require.NoError(t, CheckPassword(admin, password))
 }
 
 func TestSameVersionMigrationPreservesExistingAccount(t *testing.T) {
@@ -89,7 +141,45 @@ func TestSameVersionMigrationPreservesExistingAccount(t *testing.T) {
 	require.NoError(t, err)
 	require.False(t, needMigration(client, ctx, "4.14.0"))
 	require.True(t, client.Setting.Query().Where(setting.NameEQ(requiredTeamSchema)).ExistX(ctx))
-	require.Equal(t, existing.Password, client.User.Query().OnlyX(ctx).Password)
+	admin := client.User.Query().OnlyX(ctx)
+	require.Equal(t, existing.Email, admin.Email)
+	require.Equal(t, existing.Password, admin.Password)
+}
+
+func TestChangeRegistrationInviteKeepsUsageAndInvalidatesOldCode(t *testing.T) {
+	ctx := context.Background()
+	client := openAccountTestDB(t, filepath.Join(t.TempDir(), "invites.db"))
+	require.NoError(t, client.Schema.Create(ctx))
+
+	invite, err := CreateRegistrationInvite(ctx, client, 2, "  研发组-2026  ")
+	require.NoError(t, err)
+	require.Equal(t, "研发组-2026", invite.Code)
+	require.NoError(t, ReserveRegistrationInvite(ctx, client, invite.Code))
+	_, err = CreateRegistrationInvite(ctx, client, 2, "研发组-2026")
+	require.ErrorIs(t, err, ErrRegistrationInviteCodeInUse)
+	other, err := CreateRegistrationInvite(ctx, client, 2, "other-code")
+	require.NoError(t, err)
+	_, err = UpdateRegistrationInviteCode(ctx, client, invite.ID, other.Code)
+	require.ErrorIs(t, err, ErrRegistrationInviteCodeInUse)
+	_, err = UpdateRegistrationInviteCode(ctx, client, invite.ID, "   ")
+	require.ErrorIs(t, err, ErrInvalidRegistrationInviteCode)
+	_, err = UpdateRegistrationInviteCode(ctx, client, invite.ID, strings.Repeat("码", 129))
+	require.ErrorIs(t, err, ErrInvalidRegistrationInviteCode)
+
+	changed, err := UpdateRegistrationInviteCode(ctx, client, invite.ID, "  业务组-2026  ")
+	require.NoError(t, err)
+	require.Equal(t, RegistrationInvite{ID: invite.ID, Code: "业务组-2026", Used: 1, Limit: 2}, changed)
+	require.ErrorIs(t, ReserveRegistrationInvite(ctx, client, invite.Code), ErrInvalidRegistrationInvite)
+	require.NoError(t, ReserveRegistrationInvite(ctx, client, changed.Code))
+	require.ErrorIs(t, ReserveRegistrationInvite(ctx, client, changed.Code), ErrInvalidRegistrationInvite)
+
+	listed, err := ListRegistrationInvites(ctx, client)
+	require.NoError(t, err)
+	require.Equal(t, RegistrationInvite{ID: invite.ID, Used: 2, Limit: 2}, listed[1])
+	_, err = RevokeRegistrationInvite(ctx, client, invite.ID)
+	require.NoError(t, err)
+	_, err = UpdateRegistrationInviteCode(ctx, client, invite.ID, "inactive-code")
+	require.True(t, ent.IsNotFound(err))
 }
 
 func TestPasswordLoginLockPersistsAndResets(t *testing.T) {

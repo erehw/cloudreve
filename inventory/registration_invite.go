@@ -7,10 +7,13 @@ import (
 	"encoding/hex"
 	"errors"
 	"strings"
+	"unicode"
+	"unicode/utf8"
 
 	"entgo.io/ent/dialect/sql"
 	"github.com/cloudreve/Cloudreve/v4/ent"
 	"github.com/cloudreve/Cloudreve/v4/ent/registrationinvite"
+	"github.com/cloudreve/Cloudreve/v4/inventory/debug"
 	"github.com/cloudreve/Cloudreve/v4/inventory/types"
 )
 
@@ -20,8 +23,10 @@ const (
 )
 
 var (
-	ErrInvalidRegistrationInvite = errors.New("registration invite is missing, invalid, revoked, or exhausted")
-	ErrInvalidRegistrationGroup  = errors.New("public registration requires a regular user group")
+	ErrInvalidRegistrationInvite     = errors.New("registration invite is missing, invalid, revoked, or exhausted")
+	ErrInvalidRegistrationGroup      = errors.New("public registration requires a regular user group")
+	ErrInvalidRegistrationInviteCode = errors.New("invalid registration invite code")
+	ErrRegistrationInviteCodeInUse   = errors.New("registration invite code is already in use")
 )
 
 type RegistrationInvite struct {
@@ -32,9 +37,40 @@ type RegistrationInvite struct {
 	Revoked bool   `json:"revoked"`
 }
 
-func CreateRegistrationInvite(ctx context.Context, client *ent.Client, limit int) (RegistrationInvite, error) {
-	code := rand.Text()
+// CreateRegistrationInvite 保存自定义邀请码，留空时自动生成。
+func CreateRegistrationInvite(ctx context.Context, client *ent.Client, limit int, code string) (RegistrationInvite, error) {
+	code = strings.TrimSpace(code)
+	if code == "" {
+		code = rand.Text()
+	}
+	if !validRegistrationInviteCode(code) {
+		return RegistrationInvite{}, ErrInvalidRegistrationInviteCode
+	}
+	ctx = context.WithValue(ctx, debug.SkipDbLogging{}, true)
 	invite, err := client.RegistrationInvite.Create().SetCodeDigest(registrationInviteDigest(code)).SetLimit(limit).Save(ctx)
+	if ent.IsConstraintError(err) {
+		return RegistrationInvite{}, ErrRegistrationInviteCodeInUse
+	}
+	if err != nil {
+		return RegistrationInvite{}, err
+	}
+	result := registrationInviteResult(invite)
+	result.Code = code
+	return result, nil
+}
+
+// UpdateRegistrationInviteCode 更换未停用的邀请码，保留配额和已用次数。
+func UpdateRegistrationInviteCode(ctx context.Context, client *ent.Client, id int, code string) (RegistrationInvite, error) {
+	code = strings.TrimSpace(code)
+	if !validRegistrationInviteCode(code) {
+		return RegistrationInvite{}, ErrInvalidRegistrationInviteCode
+	}
+	ctx = context.WithValue(ctx, debug.SkipDbLogging{}, true)
+	invite, err := client.RegistrationInvite.UpdateOneID(id).
+		Where(registrationinvite.RevokedEQ(false)).SetCodeDigest(registrationInviteDigest(code)).Save(ctx)
+	if ent.IsConstraintError(err) {
+		return RegistrationInvite{}, ErrRegistrationInviteCodeInUse
+	}
 	if err != nil {
 		return RegistrationInvite{}, err
 	}
@@ -69,6 +105,7 @@ func ReserveRegistrationInvite(ctx context.Context, client *ent.Client, code str
 	if strings.TrimSpace(code) == "" {
 		return ErrInvalidRegistrationInvite
 	}
+	ctx = context.WithValue(ctx, debug.SkipDbLogging{}, true)
 	changed, err := client.RegistrationInvite.Update().Where(
 		registrationinvite.CodeDigestEQ(registrationInviteDigest(code)),
 		registrationinvite.RevokedEQ(false),
@@ -85,6 +122,7 @@ func ReserveRegistrationInvite(ctx context.Context, client *ent.Client, code str
 
 // ReleaseRegistrationInvite 归还本事务为续注册预留的名额，续注册只更新已有待激活账号。
 func ReleaseRegistrationInvite(ctx context.Context, client *ent.Client, code string) error {
+	ctx = context.WithValue(ctx, debug.SkipDbLogging{}, true)
 	_, err := client.RegistrationInvite.Update().Where(
 		registrationinvite.CodeDigestEQ(registrationInviteDigest(code)),
 	).AddUsed(-1).Save(ctx)
@@ -119,6 +157,10 @@ func isRegistrationGroup(group *ent.Group) bool {
 
 func registrationInviteResult(invite *ent.RegistrationInvite) RegistrationInvite {
 	return RegistrationInvite{ID: invite.ID, Limit: invite.Limit, Used: invite.Used, Revoked: invite.Revoked}
+}
+
+func validRegistrationInviteCode(code string) bool {
+	return code != "" && utf8.RuneCountInString(code) <= 128 && strings.IndexFunc(code, unicode.IsControl) < 0
 }
 
 func registrationInviteDigest(code string) string {

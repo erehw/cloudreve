@@ -62,7 +62,7 @@ func migrate(l logging.Logger, client *ent.Client, ctx context.Context, kv cache
 		return fmt.Errorf("无法初始化站点管理员: %w", err)
 	}
 	if createdAdmin {
-		l.Info("已创建站点管理员。临时密码保存在数据目录的 %s。", initialAdminPasswordFile)
+		l.Info("已创建站点管理员。邮箱和临时密码保存在数据目录的 %s。", initialAdminPasswordFile)
 	}
 
 	for _, marker := range []string{DBVersionPrefix + requiredDbVersion, requiredTeamSchema} {
