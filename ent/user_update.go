@@ -112,6 +112,62 @@ func (uu *UserUpdate) ClearPassword() *UserUpdate {
 	return uu
 }
 
+// SetPasswordLoginFailures sets the "password_login_failures" field.
+func (uu *UserUpdate) SetPasswordLoginFailures(i int) *UserUpdate {
+	uu.mutation.ResetPasswordLoginFailures()
+	uu.mutation.SetPasswordLoginFailures(i)
+	return uu
+}
+
+// SetNillablePasswordLoginFailures sets the "password_login_failures" field if the given value is not nil.
+func (uu *UserUpdate) SetNillablePasswordLoginFailures(i *int) *UserUpdate {
+	if i != nil {
+		uu.SetPasswordLoginFailures(*i)
+	}
+	return uu
+}
+
+// AddPasswordLoginFailures adds i to the "password_login_failures" field.
+func (uu *UserUpdate) AddPasswordLoginFailures(i int) *UserUpdate {
+	uu.mutation.AddPasswordLoginFailures(i)
+	return uu
+}
+
+// SetPasswordLoginLockedUntil sets the "password_login_locked_until" field.
+func (uu *UserUpdate) SetPasswordLoginLockedUntil(i int64) *UserUpdate {
+	uu.mutation.ResetPasswordLoginLockedUntil()
+	uu.mutation.SetPasswordLoginLockedUntil(i)
+	return uu
+}
+
+// SetNillablePasswordLoginLockedUntil sets the "password_login_locked_until" field if the given value is not nil.
+func (uu *UserUpdate) SetNillablePasswordLoginLockedUntil(i *int64) *UserUpdate {
+	if i != nil {
+		uu.SetPasswordLoginLockedUntil(*i)
+	}
+	return uu
+}
+
+// AddPasswordLoginLockedUntil adds i to the "password_login_locked_until" field.
+func (uu *UserUpdate) AddPasswordLoginLockedUntil(i int64) *UserUpdate {
+	uu.mutation.AddPasswordLoginLockedUntil(i)
+	return uu
+}
+
+// SetTeamStorage sets the "team_storage" field.
+func (uu *UserUpdate) SetTeamStorage(b bool) *UserUpdate {
+	uu.mutation.SetTeamStorage(b)
+	return uu
+}
+
+// SetNillableTeamStorage sets the "team_storage" field if the given value is not nil.
+func (uu *UserUpdate) SetNillableTeamStorage(b *bool) *UserUpdate {
+	if b != nil {
+		uu.SetTeamStorage(*b)
+	}
+	return uu
+}
+
 // SetStatus sets the "status" field.
 func (uu *UserUpdate) SetStatus(u user.Status) *UserUpdate {
 	uu.mutation.SetStatus(u)
@@ -621,6 +677,21 @@ func (uu *UserUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	if uu.mutation.PasswordCleared() {
 		_spec.ClearField(user.FieldPassword, field.TypeString)
 	}
+	if value, ok := uu.mutation.PasswordLoginFailures(); ok {
+		_spec.SetField(user.FieldPasswordLoginFailures, field.TypeInt, value)
+	}
+	if value, ok := uu.mutation.AddedPasswordLoginFailures(); ok {
+		_spec.AddField(user.FieldPasswordLoginFailures, field.TypeInt, value)
+	}
+	if value, ok := uu.mutation.PasswordLoginLockedUntil(); ok {
+		_spec.SetField(user.FieldPasswordLoginLockedUntil, field.TypeInt64, value)
+	}
+	if value, ok := uu.mutation.AddedPasswordLoginLockedUntil(); ok {
+		_spec.AddField(user.FieldPasswordLoginLockedUntil, field.TypeInt64, value)
+	}
+	if value, ok := uu.mutation.TeamStorage(); ok {
+		_spec.SetField(user.FieldTeamStorage, field.TypeBool, value)
+	}
 	if value, ok := uu.mutation.Status(); ok {
 		_spec.SetField(user.FieldStatus, field.TypeEnum, value)
 	}
@@ -1128,6 +1199,62 @@ func (uuo *UserUpdateOne) SetNillablePassword(s *string) *UserUpdateOne {
 // ClearPassword clears the value of the "password" field.
 func (uuo *UserUpdateOne) ClearPassword() *UserUpdateOne {
 	uuo.mutation.ClearPassword()
+	return uuo
+}
+
+// SetPasswordLoginFailures sets the "password_login_failures" field.
+func (uuo *UserUpdateOne) SetPasswordLoginFailures(i int) *UserUpdateOne {
+	uuo.mutation.ResetPasswordLoginFailures()
+	uuo.mutation.SetPasswordLoginFailures(i)
+	return uuo
+}
+
+// SetNillablePasswordLoginFailures sets the "password_login_failures" field if the given value is not nil.
+func (uuo *UserUpdateOne) SetNillablePasswordLoginFailures(i *int) *UserUpdateOne {
+	if i != nil {
+		uuo.SetPasswordLoginFailures(*i)
+	}
+	return uuo
+}
+
+// AddPasswordLoginFailures adds i to the "password_login_failures" field.
+func (uuo *UserUpdateOne) AddPasswordLoginFailures(i int) *UserUpdateOne {
+	uuo.mutation.AddPasswordLoginFailures(i)
+	return uuo
+}
+
+// SetPasswordLoginLockedUntil sets the "password_login_locked_until" field.
+func (uuo *UserUpdateOne) SetPasswordLoginLockedUntil(i int64) *UserUpdateOne {
+	uuo.mutation.ResetPasswordLoginLockedUntil()
+	uuo.mutation.SetPasswordLoginLockedUntil(i)
+	return uuo
+}
+
+// SetNillablePasswordLoginLockedUntil sets the "password_login_locked_until" field if the given value is not nil.
+func (uuo *UserUpdateOne) SetNillablePasswordLoginLockedUntil(i *int64) *UserUpdateOne {
+	if i != nil {
+		uuo.SetPasswordLoginLockedUntil(*i)
+	}
+	return uuo
+}
+
+// AddPasswordLoginLockedUntil adds i to the "password_login_locked_until" field.
+func (uuo *UserUpdateOne) AddPasswordLoginLockedUntil(i int64) *UserUpdateOne {
+	uuo.mutation.AddPasswordLoginLockedUntil(i)
+	return uuo
+}
+
+// SetTeamStorage sets the "team_storage" field.
+func (uuo *UserUpdateOne) SetTeamStorage(b bool) *UserUpdateOne {
+	uuo.mutation.SetTeamStorage(b)
+	return uuo
+}
+
+// SetNillableTeamStorage sets the "team_storage" field if the given value is not nil.
+func (uuo *UserUpdateOne) SetNillableTeamStorage(b *bool) *UserUpdateOne {
+	if b != nil {
+		uuo.SetTeamStorage(*b)
+	}
 	return uuo
 }
 
@@ -1669,6 +1796,21 @@ func (uuo *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) 
 	}
 	if uuo.mutation.PasswordCleared() {
 		_spec.ClearField(user.FieldPassword, field.TypeString)
+	}
+	if value, ok := uuo.mutation.PasswordLoginFailures(); ok {
+		_spec.SetField(user.FieldPasswordLoginFailures, field.TypeInt, value)
+	}
+	if value, ok := uuo.mutation.AddedPasswordLoginFailures(); ok {
+		_spec.AddField(user.FieldPasswordLoginFailures, field.TypeInt, value)
+	}
+	if value, ok := uuo.mutation.PasswordLoginLockedUntil(); ok {
+		_spec.SetField(user.FieldPasswordLoginLockedUntil, field.TypeInt64, value)
+	}
+	if value, ok := uuo.mutation.AddedPasswordLoginLockedUntil(); ok {
+		_spec.AddField(user.FieldPasswordLoginLockedUntil, field.TypeInt64, value)
+	}
+	if value, ok := uuo.mutation.TeamStorage(); ok {
+		_spec.SetField(user.FieldTeamStorage, field.TypeBool, value)
 	}
 	if value, ok := uuo.mutation.Status(); ok {
 		_spec.SetField(user.FieldStatus, field.TypeEnum, value)

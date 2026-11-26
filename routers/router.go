@@ -873,10 +873,16 @@ func initMasterRouter(dep dependency.Dep) *gin.Engine {
 		auth := v4.Group("")
 		auth.Use(middleware.LoginRequired())
 		{
+			team := auth.Group("team", middleware.FirstPartyRequired())
+			registerTeamRoutes(team)
+			registerTeamFileRoutes(team)
+
 			// 管理
 			admin := auth.Group("admin", middleware.IsAdmin())
 			admin.Use(middleware.RequiredScopes(types.ScopeAdminRead))
 			{
+				registerAccountInviteRoutes(admin)
+
 				admin.GET("summary",
 					controllers.FromQuery[adminsvc.SummaryService](adminsvc.SummaryParamCtx{}),
 					controllers.AdminSummary,

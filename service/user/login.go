@@ -2,6 +2,7 @@ package user
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/cloudreve/Cloudreve/v4/application/dependency"
@@ -126,21 +127,22 @@ func (service *UserLoginService) Login(c *gin.Context) (*ent.User, string, error
 	userClient := dep.UserClient()
 
 	ctx := context.WithValue(c, inventory.LoadUserGroup{}, true)
-	expectedUser, err := userClient.GetByEmail(ctx, service.UserName)
-
-	// 一系列校验
+	expectedUser, err := userClient.VerifyPasswordLogin(ctx, service.UserName, service.Password)
 	if err != nil {
-		err = serializer.NewError(serializer.CodeInvalidPassword, "Incorrect password or email address", err)
-	} else if checkErr := inventory.CheckPassword(expectedUser, service.Password); checkErr != nil {
-		err = serializer.NewError(serializer.CodeInvalidPassword, "Incorrect password or email address", err)
-	} else if expectedUser.Status == user.StatusManualBanned || expectedUser.Status == user.StatusSysBanned {
-		err = serializer.NewError(serializer.CodeUserBaned, "This account has been blocked", nil)
-	} else if expectedUser.Status == user.StatusInactive {
-		err = serializer.NewError(serializer.CodeUserNotActivated, "This account is not activated", nil)
+		if errors.Is(err, inventory.ErrPasswordLoginLocked) {
+			return nil, "", serializer.NewError(serializer.CodePasswordLoginLocked, "密码登录已暂时锁定，请在锁定开始 3 分钟后重试。", nil)
+		}
+		if ent.IsNotFound(err) || errors.Is(err, inventory.ErrorIncorrectPassword) {
+			return nil, "", serializer.NewError(serializer.CodeInvalidPassword, "Incorrect password or email address", nil)
+		}
+		return nil, "", serializer.NewError(serializer.CodeDBError, "Failed to verify password", err)
 	}
 
-	if err != nil {
-		return nil, "", err
+	if expectedUser.Status == user.StatusManualBanned || expectedUser.Status == user.StatusSysBanned {
+		return nil, "", serializer.NewError(serializer.CodeUserBaned, "This account has been blocked", nil)
+	}
+	if expectedUser.Status == user.StatusInactive {
+		return nil, "", serializer.NewError(serializer.CodeUserNotActivated, "This account is not activated", nil)
 	}
 
 	if expectedUser.TwoFactorSecret != "" {
@@ -159,6 +161,9 @@ type (
 func IssueToken(c *gin.Context) (*BuiltinLoginResponse, error) {
 	dep := dependency.FromContext(c)
 	u := inventory.UserFromContext(c)
+	if u.TeamStorage {
+		return nil, serializer.NewError(serializer.CodeCredentialInvalid, "Invalid user credentials", nil)
+	}
 	token, err := dep.TokenAuth().Issue(c, &auth.IssueTokenArgs{
 		User:        u,
 		RootTokenID: nil,
@@ -230,6 +235,9 @@ func (service *OtpValidationService) Verify2FA(c *gin.Context) (*ent.User, error
 	expectedUser, err := dep.UserClient().GetByID(ctx, uid)
 	if err != nil {
 		return nil, serializer.NewError(serializer.CodeNotFound, "User not found", err)
+	}
+	if expectedUser.TeamStorage {
+		return nil, serializer.NewError(serializer.CodeNotFound, "User not found", nil)
 	}
 
 	if expectedUser.TwoFactorSecret != "" {

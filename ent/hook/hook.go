@@ -141,6 +141,18 @@ func (f PasskeyFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, err
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.PasskeyMutation", m)
 }
 
+// The RegistrationInviteFunc type is an adapter to allow the use of ordinary
+// function as RegistrationInvite mutator.
+type RegistrationInviteFunc func(context.Context, *ent.RegistrationInviteMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f RegistrationInviteFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.RegistrationInviteMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.RegistrationInviteMutation", m)
+}
+
 // The SettingFunc type is an adapter to allow the use of ordinary
 // function as Setting mutator.
 type SettingFunc func(context.Context, *ent.SettingMutation) (ent.Value, error)
@@ -187,6 +199,42 @@ func (f TaskFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error)
 		return f(ctx, mv)
 	}
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.TaskMutation", m)
+}
+
+// The TeamFunc type is an adapter to allow the use of ordinary
+// function as Team mutator.
+type TeamFunc func(context.Context, *ent.TeamMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f TeamFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.TeamMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.TeamMutation", m)
+}
+
+// The TeamInviteFunc type is an adapter to allow the use of ordinary
+// function as TeamInvite mutator.
+type TeamInviteFunc func(context.Context, *ent.TeamInviteMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f TeamInviteFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.TeamInviteMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.TeamInviteMutation", m)
+}
+
+// The TeamMemberFunc type is an adapter to allow the use of ordinary
+// function as TeamMember mutator.
+type TeamMemberFunc func(context.Context, *ent.TeamMemberMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f TeamMemberFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.TeamMemberMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.TeamMemberMutation", m)
 }
 
 // The UserFunc type is an adapter to allow the use of ordinary

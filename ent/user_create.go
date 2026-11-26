@@ -100,6 +100,48 @@ func (uc *UserCreate) SetNillablePassword(s *string) *UserCreate {
 	return uc
 }
 
+// SetPasswordLoginFailures sets the "password_login_failures" field.
+func (uc *UserCreate) SetPasswordLoginFailures(i int) *UserCreate {
+	uc.mutation.SetPasswordLoginFailures(i)
+	return uc
+}
+
+// SetNillablePasswordLoginFailures sets the "password_login_failures" field if the given value is not nil.
+func (uc *UserCreate) SetNillablePasswordLoginFailures(i *int) *UserCreate {
+	if i != nil {
+		uc.SetPasswordLoginFailures(*i)
+	}
+	return uc
+}
+
+// SetPasswordLoginLockedUntil sets the "password_login_locked_until" field.
+func (uc *UserCreate) SetPasswordLoginLockedUntil(i int64) *UserCreate {
+	uc.mutation.SetPasswordLoginLockedUntil(i)
+	return uc
+}
+
+// SetNillablePasswordLoginLockedUntil sets the "password_login_locked_until" field if the given value is not nil.
+func (uc *UserCreate) SetNillablePasswordLoginLockedUntil(i *int64) *UserCreate {
+	if i != nil {
+		uc.SetPasswordLoginLockedUntil(*i)
+	}
+	return uc
+}
+
+// SetTeamStorage sets the "team_storage" field.
+func (uc *UserCreate) SetTeamStorage(b bool) *UserCreate {
+	uc.mutation.SetTeamStorage(b)
+	return uc
+}
+
+// SetNillableTeamStorage sets the "team_storage" field if the given value is not nil.
+func (uc *UserCreate) SetNillableTeamStorage(b *bool) *UserCreate {
+	if b != nil {
+		uc.SetTeamStorage(*b)
+	}
+	return uc
+}
+
 // SetStatus sets the "status" field.
 func (uc *UserCreate) SetStatus(u user.Status) *UserCreate {
 	uc.mutation.SetStatus(u)
@@ -350,6 +392,18 @@ func (uc *UserCreate) defaults() error {
 		v := user.DefaultUpdatedAt()
 		uc.mutation.SetUpdatedAt(v)
 	}
+	if _, ok := uc.mutation.PasswordLoginFailures(); !ok {
+		v := user.DefaultPasswordLoginFailures
+		uc.mutation.SetPasswordLoginFailures(v)
+	}
+	if _, ok := uc.mutation.PasswordLoginLockedUntil(); !ok {
+		v := user.DefaultPasswordLoginLockedUntil
+		uc.mutation.SetPasswordLoginLockedUntil(v)
+	}
+	if _, ok := uc.mutation.TeamStorage(); !ok {
+		v := user.DefaultTeamStorage
+		uc.mutation.SetTeamStorage(v)
+	}
 	if _, ok := uc.mutation.Status(); !ok {
 		v := user.DefaultStatus
 		uc.mutation.SetStatus(v)
@@ -388,6 +442,15 @@ func (uc *UserCreate) check() error {
 		if err := user.NickValidator(v); err != nil {
 			return &ValidationError{Name: "nick", err: fmt.Errorf(`ent: validator failed for field "User.nick": %w`, err)}
 		}
+	}
+	if _, ok := uc.mutation.PasswordLoginFailures(); !ok {
+		return &ValidationError{Name: "password_login_failures", err: errors.New(`ent: missing required field "User.password_login_failures"`)}
+	}
+	if _, ok := uc.mutation.PasswordLoginLockedUntil(); !ok {
+		return &ValidationError{Name: "password_login_locked_until", err: errors.New(`ent: missing required field "User.password_login_locked_until"`)}
+	}
+	if _, ok := uc.mutation.TeamStorage(); !ok {
+		return &ValidationError{Name: "team_storage", err: errors.New(`ent: missing required field "User.team_storage"`)}
 	}
 	if _, ok := uc.mutation.Status(); !ok {
 		return &ValidationError{Name: "status", err: errors.New(`ent: missing required field "User.status"`)}
@@ -463,6 +526,18 @@ func (uc *UserCreate) createSpec() (*User, *sqlgraph.CreateSpec) {
 	if value, ok := uc.mutation.Password(); ok {
 		_spec.SetField(user.FieldPassword, field.TypeString, value)
 		_node.Password = value
+	}
+	if value, ok := uc.mutation.PasswordLoginFailures(); ok {
+		_spec.SetField(user.FieldPasswordLoginFailures, field.TypeInt, value)
+		_node.PasswordLoginFailures = value
+	}
+	if value, ok := uc.mutation.PasswordLoginLockedUntil(); ok {
+		_spec.SetField(user.FieldPasswordLoginLockedUntil, field.TypeInt64, value)
+		_node.PasswordLoginLockedUntil = value
+	}
+	if value, ok := uc.mutation.TeamStorage(); ok {
+		_spec.SetField(user.FieldTeamStorage, field.TypeBool, value)
+		_node.TeamStorage = value
 	}
 	if value, ok := uc.mutation.Status(); ok {
 		_spec.SetField(user.FieldStatus, field.TypeEnum, value)
@@ -753,6 +828,54 @@ func (u *UserUpsert) ClearPassword() *UserUpsert {
 	return u
 }
 
+// SetPasswordLoginFailures sets the "password_login_failures" field.
+func (u *UserUpsert) SetPasswordLoginFailures(v int) *UserUpsert {
+	u.Set(user.FieldPasswordLoginFailures, v)
+	return u
+}
+
+// UpdatePasswordLoginFailures sets the "password_login_failures" field to the value that was provided on create.
+func (u *UserUpsert) UpdatePasswordLoginFailures() *UserUpsert {
+	u.SetExcluded(user.FieldPasswordLoginFailures)
+	return u
+}
+
+// AddPasswordLoginFailures adds v to the "password_login_failures" field.
+func (u *UserUpsert) AddPasswordLoginFailures(v int) *UserUpsert {
+	u.Add(user.FieldPasswordLoginFailures, v)
+	return u
+}
+
+// SetPasswordLoginLockedUntil sets the "password_login_locked_until" field.
+func (u *UserUpsert) SetPasswordLoginLockedUntil(v int64) *UserUpsert {
+	u.Set(user.FieldPasswordLoginLockedUntil, v)
+	return u
+}
+
+// UpdatePasswordLoginLockedUntil sets the "password_login_locked_until" field to the value that was provided on create.
+func (u *UserUpsert) UpdatePasswordLoginLockedUntil() *UserUpsert {
+	u.SetExcluded(user.FieldPasswordLoginLockedUntil)
+	return u
+}
+
+// AddPasswordLoginLockedUntil adds v to the "password_login_locked_until" field.
+func (u *UserUpsert) AddPasswordLoginLockedUntil(v int64) *UserUpsert {
+	u.Add(user.FieldPasswordLoginLockedUntil, v)
+	return u
+}
+
+// SetTeamStorage sets the "team_storage" field.
+func (u *UserUpsert) SetTeamStorage(v bool) *UserUpsert {
+	u.Set(user.FieldTeamStorage, v)
+	return u
+}
+
+// UpdateTeamStorage sets the "team_storage" field to the value that was provided on create.
+func (u *UserUpsert) UpdateTeamStorage() *UserUpsert {
+	u.SetExcluded(user.FieldTeamStorage)
+	return u
+}
+
 // SetStatus sets the "status" field.
 func (u *UserUpsert) SetStatus(v user.Status) *UserUpsert {
 	u.Set(user.FieldStatus, v)
@@ -975,6 +1098,62 @@ func (u *UserUpsertOne) UpdatePassword() *UserUpsertOne {
 func (u *UserUpsertOne) ClearPassword() *UserUpsertOne {
 	return u.Update(func(s *UserUpsert) {
 		s.ClearPassword()
+	})
+}
+
+// SetPasswordLoginFailures sets the "password_login_failures" field.
+func (u *UserUpsertOne) SetPasswordLoginFailures(v int) *UserUpsertOne {
+	return u.Update(func(s *UserUpsert) {
+		s.SetPasswordLoginFailures(v)
+	})
+}
+
+// AddPasswordLoginFailures adds v to the "password_login_failures" field.
+func (u *UserUpsertOne) AddPasswordLoginFailures(v int) *UserUpsertOne {
+	return u.Update(func(s *UserUpsert) {
+		s.AddPasswordLoginFailures(v)
+	})
+}
+
+// UpdatePasswordLoginFailures sets the "password_login_failures" field to the value that was provided on create.
+func (u *UserUpsertOne) UpdatePasswordLoginFailures() *UserUpsertOne {
+	return u.Update(func(s *UserUpsert) {
+		s.UpdatePasswordLoginFailures()
+	})
+}
+
+// SetPasswordLoginLockedUntil sets the "password_login_locked_until" field.
+func (u *UserUpsertOne) SetPasswordLoginLockedUntil(v int64) *UserUpsertOne {
+	return u.Update(func(s *UserUpsert) {
+		s.SetPasswordLoginLockedUntil(v)
+	})
+}
+
+// AddPasswordLoginLockedUntil adds v to the "password_login_locked_until" field.
+func (u *UserUpsertOne) AddPasswordLoginLockedUntil(v int64) *UserUpsertOne {
+	return u.Update(func(s *UserUpsert) {
+		s.AddPasswordLoginLockedUntil(v)
+	})
+}
+
+// UpdatePasswordLoginLockedUntil sets the "password_login_locked_until" field to the value that was provided on create.
+func (u *UserUpsertOne) UpdatePasswordLoginLockedUntil() *UserUpsertOne {
+	return u.Update(func(s *UserUpsert) {
+		s.UpdatePasswordLoginLockedUntil()
+	})
+}
+
+// SetTeamStorage sets the "team_storage" field.
+func (u *UserUpsertOne) SetTeamStorage(v bool) *UserUpsertOne {
+	return u.Update(func(s *UserUpsert) {
+		s.SetTeamStorage(v)
+	})
+}
+
+// UpdateTeamStorage sets the "team_storage" field to the value that was provided on create.
+func (u *UserUpsertOne) UpdateTeamStorage() *UserUpsertOne {
+	return u.Update(func(s *UserUpsert) {
+		s.UpdateTeamStorage()
 	})
 }
 
@@ -1387,6 +1566,62 @@ func (u *UserUpsertBulk) UpdatePassword() *UserUpsertBulk {
 func (u *UserUpsertBulk) ClearPassword() *UserUpsertBulk {
 	return u.Update(func(s *UserUpsert) {
 		s.ClearPassword()
+	})
+}
+
+// SetPasswordLoginFailures sets the "password_login_failures" field.
+func (u *UserUpsertBulk) SetPasswordLoginFailures(v int) *UserUpsertBulk {
+	return u.Update(func(s *UserUpsert) {
+		s.SetPasswordLoginFailures(v)
+	})
+}
+
+// AddPasswordLoginFailures adds v to the "password_login_failures" field.
+func (u *UserUpsertBulk) AddPasswordLoginFailures(v int) *UserUpsertBulk {
+	return u.Update(func(s *UserUpsert) {
+		s.AddPasswordLoginFailures(v)
+	})
+}
+
+// UpdatePasswordLoginFailures sets the "password_login_failures" field to the value that was provided on create.
+func (u *UserUpsertBulk) UpdatePasswordLoginFailures() *UserUpsertBulk {
+	return u.Update(func(s *UserUpsert) {
+		s.UpdatePasswordLoginFailures()
+	})
+}
+
+// SetPasswordLoginLockedUntil sets the "password_login_locked_until" field.
+func (u *UserUpsertBulk) SetPasswordLoginLockedUntil(v int64) *UserUpsertBulk {
+	return u.Update(func(s *UserUpsert) {
+		s.SetPasswordLoginLockedUntil(v)
+	})
+}
+
+// AddPasswordLoginLockedUntil adds v to the "password_login_locked_until" field.
+func (u *UserUpsertBulk) AddPasswordLoginLockedUntil(v int64) *UserUpsertBulk {
+	return u.Update(func(s *UserUpsert) {
+		s.AddPasswordLoginLockedUntil(v)
+	})
+}
+
+// UpdatePasswordLoginLockedUntil sets the "password_login_locked_until" field to the value that was provided on create.
+func (u *UserUpsertBulk) UpdatePasswordLoginLockedUntil() *UserUpsertBulk {
+	return u.Update(func(s *UserUpsert) {
+		s.UpdatePasswordLoginLockedUntil()
+	})
+}
+
+// SetTeamStorage sets the "team_storage" field.
+func (u *UserUpsertBulk) SetTeamStorage(v bool) *UserUpsertBulk {
+	return u.Update(func(s *UserUpsert) {
+		s.SetTeamStorage(v)
+	})
+}
+
+// UpdateTeamStorage sets the "team_storage" field to the value that was provided on create.
+func (u *UserUpsertBulk) UpdateTeamStorage() *UserUpsertBulk {
+	return u.Update(func(s *UserUpsert) {
+		s.UpdateTeamStorage()
 	})
 }
 

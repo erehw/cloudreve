@@ -85,6 +85,21 @@ func Password(v string) predicate.User {
 	return predicate.User(sql.FieldEQ(FieldPassword, v))
 }
 
+// PasswordLoginFailures applies equality check predicate on the "password_login_failures" field. It's identical to PasswordLoginFailuresEQ.
+func PasswordLoginFailures(v int) predicate.User {
+	return predicate.User(sql.FieldEQ(FieldPasswordLoginFailures, v))
+}
+
+// PasswordLoginLockedUntil applies equality check predicate on the "password_login_locked_until" field. It's identical to PasswordLoginLockedUntilEQ.
+func PasswordLoginLockedUntil(v int64) predicate.User {
+	return predicate.User(sql.FieldEQ(FieldPasswordLoginLockedUntil, v))
+}
+
+// TeamStorage applies equality check predicate on the "team_storage" field. It's identical to TeamStorageEQ.
+func TeamStorage(v bool) predicate.User {
+	return predicate.User(sql.FieldEQ(FieldTeamStorage, v))
+}
+
 // Storage applies equality check predicate on the "storage" field. It's identical to StorageEQ.
 func Storage(v int64) predicate.User {
 	return predicate.User(sql.FieldEQ(FieldStorage, v))
@@ -438,6 +453,96 @@ func PasswordEqualFold(v string) predicate.User {
 // PasswordContainsFold applies the ContainsFold predicate on the "password" field.
 func PasswordContainsFold(v string) predicate.User {
 	return predicate.User(sql.FieldContainsFold(FieldPassword, v))
+}
+
+// PasswordLoginFailuresEQ applies the EQ predicate on the "password_login_failures" field.
+func PasswordLoginFailuresEQ(v int) predicate.User {
+	return predicate.User(sql.FieldEQ(FieldPasswordLoginFailures, v))
+}
+
+// PasswordLoginFailuresNEQ applies the NEQ predicate on the "password_login_failures" field.
+func PasswordLoginFailuresNEQ(v int) predicate.User {
+	return predicate.User(sql.FieldNEQ(FieldPasswordLoginFailures, v))
+}
+
+// PasswordLoginFailuresIn applies the In predicate on the "password_login_failures" field.
+func PasswordLoginFailuresIn(vs ...int) predicate.User {
+	return predicate.User(sql.FieldIn(FieldPasswordLoginFailures, vs...))
+}
+
+// PasswordLoginFailuresNotIn applies the NotIn predicate on the "password_login_failures" field.
+func PasswordLoginFailuresNotIn(vs ...int) predicate.User {
+	return predicate.User(sql.FieldNotIn(FieldPasswordLoginFailures, vs...))
+}
+
+// PasswordLoginFailuresGT applies the GT predicate on the "password_login_failures" field.
+func PasswordLoginFailuresGT(v int) predicate.User {
+	return predicate.User(sql.FieldGT(FieldPasswordLoginFailures, v))
+}
+
+// PasswordLoginFailuresGTE applies the GTE predicate on the "password_login_failures" field.
+func PasswordLoginFailuresGTE(v int) predicate.User {
+	return predicate.User(sql.FieldGTE(FieldPasswordLoginFailures, v))
+}
+
+// PasswordLoginFailuresLT applies the LT predicate on the "password_login_failures" field.
+func PasswordLoginFailuresLT(v int) predicate.User {
+	return predicate.User(sql.FieldLT(FieldPasswordLoginFailures, v))
+}
+
+// PasswordLoginFailuresLTE applies the LTE predicate on the "password_login_failures" field.
+func PasswordLoginFailuresLTE(v int) predicate.User {
+	return predicate.User(sql.FieldLTE(FieldPasswordLoginFailures, v))
+}
+
+// PasswordLoginLockedUntilEQ applies the EQ predicate on the "password_login_locked_until" field.
+func PasswordLoginLockedUntilEQ(v int64) predicate.User {
+	return predicate.User(sql.FieldEQ(FieldPasswordLoginLockedUntil, v))
+}
+
+// PasswordLoginLockedUntilNEQ applies the NEQ predicate on the "password_login_locked_until" field.
+func PasswordLoginLockedUntilNEQ(v int64) predicate.User {
+	return predicate.User(sql.FieldNEQ(FieldPasswordLoginLockedUntil, v))
+}
+
+// PasswordLoginLockedUntilIn applies the In predicate on the "password_login_locked_until" field.
+func PasswordLoginLockedUntilIn(vs ...int64) predicate.User {
+	return predicate.User(sql.FieldIn(FieldPasswordLoginLockedUntil, vs...))
+}
+
+// PasswordLoginLockedUntilNotIn applies the NotIn predicate on the "password_login_locked_until" field.
+func PasswordLoginLockedUntilNotIn(vs ...int64) predicate.User {
+	return predicate.User(sql.FieldNotIn(FieldPasswordLoginLockedUntil, vs...))
+}
+
+// PasswordLoginLockedUntilGT applies the GT predicate on the "password_login_locked_until" field.
+func PasswordLoginLockedUntilGT(v int64) predicate.User {
+	return predicate.User(sql.FieldGT(FieldPasswordLoginLockedUntil, v))
+}
+
+// PasswordLoginLockedUntilGTE applies the GTE predicate on the "password_login_locked_until" field.
+func PasswordLoginLockedUntilGTE(v int64) predicate.User {
+	return predicate.User(sql.FieldGTE(FieldPasswordLoginLockedUntil, v))
+}
+
+// PasswordLoginLockedUntilLT applies the LT predicate on the "password_login_locked_until" field.
+func PasswordLoginLockedUntilLT(v int64) predicate.User {
+	return predicate.User(sql.FieldLT(FieldPasswordLoginLockedUntil, v))
+}
+
+// PasswordLoginLockedUntilLTE applies the LTE predicate on the "password_login_locked_until" field.
+func PasswordLoginLockedUntilLTE(v int64) predicate.User {
+	return predicate.User(sql.FieldLTE(FieldPasswordLoginLockedUntil, v))
+}
+
+// TeamStorageEQ applies the EQ predicate on the "team_storage" field.
+func TeamStorageEQ(v bool) predicate.User {
+	return predicate.User(sql.FieldEQ(FieldTeamStorage, v))
+}
+
+// TeamStorageNEQ applies the NEQ predicate on the "team_storage" field.
+func TeamStorageNEQ(v bool) predicate.User {
+	return predicate.User(sql.FieldNEQ(FieldTeamStorage, v))
 }
 
 // StatusEQ applies the EQ predicate on the "status" field.

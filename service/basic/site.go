@@ -17,15 +17,16 @@ import (
 // SiteConfig 站点全局设置序列
 type SiteConfig struct {
 	// Basic Section
-	InstanceID     string                  `json:"instance_id,omitempty"`
-	SiteName       string                  `json:"title,omitempty"`
-	Themes         string                  `json:"themes,omitempty"`
-	DefaultTheme   string                  `json:"default_theme,omitempty"`
-	User           *user.User              `json:"user,omitempty"`
-	Logo           string                  `json:"logo,omitempty"`
-	LogoLight      string                  `json:"logo_light,omitempty"`
-	CustomNavItems []setting.CustomNavItem `json:"custom_nav_items,omitempty"`
-	CustomHTML     *setting.CustomHTML     `json:"custom_html,omitempty"`
+	InstanceID      string                  `json:"instance_id,omitempty"`
+	SiteName        string                  `json:"title,omitempty"`
+	Themes          string                  `json:"themes,omitempty"`
+	DefaultTheme    string                  `json:"default_theme,omitempty"`
+	User            *user.User              `json:"user,omitempty"`
+	Logo            string                  `json:"logo,omitempty"`
+	LogoLight       string                  `json:"logo_light,omitempty"`
+	CustomNavItems  []setting.CustomNavItem `json:"custom_nav_items,omitempty"`
+	CustomHTML      *setting.CustomHTML     `json:"custom_html,omitempty"`
+	ShowProFeatures bool                    `json:"show_pro_features"`
 
 	// Login Section
 	LoginCaptcha     bool                `json:"login_captcha,omitempty"`
@@ -208,6 +209,7 @@ func (s *GetSettingService) GetSiteConfig(c *gin.Context) (*SiteConfig, error) {
 		AppPromotion:    appSetting.Promotion,
 		CustomNavItems:  customNavItems,
 		CustomHTML:      customHTML,
+		ShowProFeatures: siteBasic.ShowProFeatures,
 	}, nil
 }
 

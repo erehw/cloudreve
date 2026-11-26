@@ -490,6 +490,7 @@ var DefaultSettings = map[string]string{
 	"siteID":                                     uuid.Must(uuid.NewV4()).String(),
 	"siteTitle":                                  "Cloud storage for everyone",
 	"siteScript":                                 "",
+	"show_pro_features":                          "0",
 	"pwa_small_icon":                             "/static/img/favicon.ico",
 	"pwa_medium_icon":                            "/static/img/logo192.png",
 	"pwa_large_icon":                             "/static/img/logo512.png",

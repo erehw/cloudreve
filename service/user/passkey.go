@@ -125,8 +125,8 @@ func (s *FinishPasskeyLoginService) FinishPasskeyLogin(c *gin.Context) (*ent.Use
 			return nil, serializer.NewError(serializer.CodeDBError, "Failed to get user", err)
 		}
 
-		if inventory.IsAnonymousUser(u) {
-			return nil, errors.New("anonymous user")
+		if inventory.IsAnonymousUser(u) || u.TeamStorage {
+			return nil, errors.New("invalid passkey user")
 		}
 
 		loginedUser = u

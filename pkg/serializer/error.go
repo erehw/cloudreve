@@ -81,6 +81,8 @@ const (
 	CodeNotFound = 404
 	// CodeConflict 资源冲突
 	CodeConflict = 409
+	// CodePasswordLoginLocked 密码登录暂时锁定
+	CodePasswordLoginLocked = 423
 	// CodeUploadFailed 上传出错
 	CodeUploadFailed = 40002
 	// CodeCreateFolderFailed 目录创建失败
@@ -257,6 +259,8 @@ const (
 	CodeAnonymouseAccessDenied = 40088
 	// CodeInsufficientScope OAuth token scope insufficient
 	CodeInsufficientScope = 40089
+	// CodeInvalidRegistrationInvite 注册邀请码无法使用
+	CodeInvalidRegistrationInvite = 40090
 	// CodeDBError 数据库操作失败
 	CodeDBError = 50001
 	// CodeEncryptError 加密失败

@@ -22,6 +22,15 @@ func (User) Fields() []ent.Field {
 		field.String("password").
 			Optional().
 			Sensitive(),
+		field.Int("password_login_failures").
+			Default(0).
+			StructTag(`json:"-"`),
+		field.Int64("password_login_locked_until").
+			Default(0).
+			StructTag(`json:"-"`),
+		field.Bool("team_storage").
+			Default(false).
+			StructTag(`json:"-"`),
 		field.Enum("status").
 			Values("active", "inactive", "manual_banned", "sys_banned").
 			Default("active"),

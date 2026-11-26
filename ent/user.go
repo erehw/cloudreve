@@ -32,6 +32,12 @@ type User struct {
 	Nick string `json:"nick,omitempty"`
 	// Password holds the value of the "password" field.
 	Password string `json:"-"`
+	// PasswordLoginFailures holds the value of the "password_login_failures" field.
+	PasswordLoginFailures int `json:"-"`
+	// PasswordLoginLockedUntil holds the value of the "password_login_locked_until" field.
+	PasswordLoginLockedUntil int64 `json:"-"`
+	// TeamStorage holds the value of the "team_storage" field.
+	TeamStorage bool `json:"-"`
 	// Status holds the value of the "status" field.
 	Status user.Status `json:"status,omitempty"`
 	// Storage holds the value of the "storage" field.
@@ -167,7 +173,9 @@ func (*User) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case user.FieldSettings:
 			values[i] = new([]byte)
-		case user.FieldID, user.FieldStorage, user.FieldGroupUsers:
+		case user.FieldTeamStorage:
+			values[i] = new(sql.NullBool)
+		case user.FieldID, user.FieldPasswordLoginFailures, user.FieldPasswordLoginLockedUntil, user.FieldStorage, user.FieldGroupUsers:
 			values[i] = new(sql.NullInt64)
 		case user.FieldEmail, user.FieldNick, user.FieldPassword, user.FieldStatus, user.FieldTwoFactorSecret, user.FieldAvatar:
 			values[i] = new(sql.NullString)
@@ -230,6 +238,24 @@ func (u *User) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field password", values[i])
 			} else if value.Valid {
 				u.Password = value.String
+			}
+		case user.FieldPasswordLoginFailures:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field password_login_failures", values[i])
+			} else if value.Valid {
+				u.PasswordLoginFailures = int(value.Int64)
+			}
+		case user.FieldPasswordLoginLockedUntil:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field password_login_locked_until", values[i])
+			} else if value.Valid {
+				u.PasswordLoginLockedUntil = value.Int64
+			}
+		case user.FieldTeamStorage:
+			if value, ok := values[i].(*sql.NullBool); !ok {
+				return fmt.Errorf("unexpected type %T for field team_storage", values[i])
+			} else if value.Valid {
+				u.TeamStorage = value.Bool
 			}
 		case user.FieldStatus:
 			if value, ok := values[i].(*sql.NullString); !ok {
@@ -368,6 +394,15 @@ func (u *User) String() string {
 	builder.WriteString(u.Nick)
 	builder.WriteString(", ")
 	builder.WriteString("password=<sensitive>")
+	builder.WriteString(", ")
+	builder.WriteString("password_login_failures=")
+	builder.WriteString(fmt.Sprintf("%v", u.PasswordLoginFailures))
+	builder.WriteString(", ")
+	builder.WriteString("password_login_locked_until=")
+	builder.WriteString(fmt.Sprintf("%v", u.PasswordLoginLockedUntil))
+	builder.WriteString(", ")
+	builder.WriteString("team_storage=")
+	builder.WriteString(fmt.Sprintf("%v", u.TeamStorage))
 	builder.WriteString(", ")
 	builder.WriteString("status=")
 	builder.WriteString(fmt.Sprintf("%v", u.Status))
