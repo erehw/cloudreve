@@ -345,6 +345,18 @@ func (u *RegistrationInviteUpsert) ClearDeletedAt() *RegistrationInviteUpsert {
 	return u
 }
 
+// SetCodeDigest sets the "code_digest" field.
+func (u *RegistrationInviteUpsert) SetCodeDigest(v string) *RegistrationInviteUpsert {
+	u.Set(registrationinvite.FieldCodeDigest, v)
+	return u
+}
+
+// UpdateCodeDigest sets the "code_digest" field to the value that was provided on create.
+func (u *RegistrationInviteUpsert) UpdateCodeDigest() *RegistrationInviteUpsert {
+	u.SetExcluded(registrationinvite.FieldCodeDigest)
+	return u
+}
+
 // SetUsed sets the "used" field.
 func (u *RegistrationInviteUpsert) SetUsed(v int) *RegistrationInviteUpsert {
 	u.Set(registrationinvite.FieldUsed, v)
@@ -388,9 +400,6 @@ func (u *RegistrationInviteUpsertOne) UpdateNewValues() *RegistrationInviteUpser
 	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
 		if _, exists := u.create.mutation.CreatedAt(); exists {
 			s.SetIgnore(registrationinvite.FieldCreatedAt)
-		}
-		if _, exists := u.create.mutation.CodeDigest(); exists {
-			s.SetIgnore(registrationinvite.FieldCodeDigest)
 		}
 		if _, exists := u.create.mutation.Limit(); exists {
 			s.SetIgnore(registrationinvite.FieldLimit)
@@ -458,6 +467,20 @@ func (u *RegistrationInviteUpsertOne) UpdateDeletedAt() *RegistrationInviteUpser
 func (u *RegistrationInviteUpsertOne) ClearDeletedAt() *RegistrationInviteUpsertOne {
 	return u.Update(func(s *RegistrationInviteUpsert) {
 		s.ClearDeletedAt()
+	})
+}
+
+// SetCodeDigest sets the "code_digest" field.
+func (u *RegistrationInviteUpsertOne) SetCodeDigest(v string) *RegistrationInviteUpsertOne {
+	return u.Update(func(s *RegistrationInviteUpsert) {
+		s.SetCodeDigest(v)
+	})
+}
+
+// UpdateCodeDigest sets the "code_digest" field to the value that was provided on create.
+func (u *RegistrationInviteUpsertOne) UpdateCodeDigest() *RegistrationInviteUpsertOne {
+	return u.Update(func(s *RegistrationInviteUpsert) {
+		s.UpdateCodeDigest()
 	})
 }
 
@@ -680,9 +703,6 @@ func (u *RegistrationInviteUpsertBulk) UpdateNewValues() *RegistrationInviteUpse
 			if _, exists := b.mutation.CreatedAt(); exists {
 				s.SetIgnore(registrationinvite.FieldCreatedAt)
 			}
-			if _, exists := b.mutation.CodeDigest(); exists {
-				s.SetIgnore(registrationinvite.FieldCodeDigest)
-			}
 			if _, exists := b.mutation.Limit(); exists {
 				s.SetIgnore(registrationinvite.FieldLimit)
 			}
@@ -750,6 +770,20 @@ func (u *RegistrationInviteUpsertBulk) UpdateDeletedAt() *RegistrationInviteUpse
 func (u *RegistrationInviteUpsertBulk) ClearDeletedAt() *RegistrationInviteUpsertBulk {
 	return u.Update(func(s *RegistrationInviteUpsert) {
 		s.ClearDeletedAt()
+	})
+}
+
+// SetCodeDigest sets the "code_digest" field.
+func (u *RegistrationInviteUpsertBulk) SetCodeDigest(v string) *RegistrationInviteUpsertBulk {
+	return u.Update(func(s *RegistrationInviteUpsert) {
+		s.SetCodeDigest(v)
+	})
+}
+
+// UpdateCodeDigest sets the "code_digest" field to the value that was provided on create.
+func (u *RegistrationInviteUpsertBulk) UpdateCodeDigest() *RegistrationInviteUpsertBulk {
+	return u.Update(func(s *RegistrationInviteUpsert) {
+		s.UpdateCodeDigest()
 	})
 }
 

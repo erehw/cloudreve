@@ -2,7 +2,7 @@
 setlocal EnableExtensions EnableDelayedExpansion
 pushd "%~dp0" || exit /b 1
 
-set "VERSION=4.19.2-nona.2"
+set "VERSION=4.19.2-selfhosted.1"
 set "WORK=release/build"
 set "ASSETS_ZIP=!WORK!/assets.zip"
 set "WINDOWS_EXE=cloudreve-!VERSION!-windows-amd64.exe"

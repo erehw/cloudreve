@@ -34,11 +34,11 @@
   <a href="https://discord.com/invite/WTpMFpZT76">Discord</a>
 </p>
 
-## Nona self-hosted edition
+## Cloudreve self-hosted edition
 
 - **Team documents.** Any signed-in user can create a team. Team administrators can invite up to 10 people per link. Members share folders, manage files, and view file versions.
-- **Invite-only registration.** When registration is enabled, new users need a code issued by a site administrator. Each code defaults to 10 registrations.
-- **Administrator setup and sign-in.** The first start with an empty database creates `tom@nona.cn` and saves its random password to `./data/管理员密码.txt`. Ten consecutive password failures lock password sign-in for that account for three minutes.
+- **Invite-only registration.** When registration is enabled, new users need a code issued by a site administrator. Administrators can generate, customize, or replace a code. Each code defaults to 10 registrations.
+- **Administrator setup and sign-in.** The first start with an empty database generates an email address and password for the administrator and saves both to `./data/管理员密码.txt`. Ten consecutive password failures lock password sign-in for that account for three minutes.
 - **Pro feature visibility.** The community edition hides Pro-only entries by default. Site administrators can change their visibility under **Settings → Site Information**.
 
 ![Screenshot](https://raw.githubusercontent.com/cloudreve/docs/master/images/homepage.png)
